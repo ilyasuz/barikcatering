@@ -1,0 +1,359 @@
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Plus, Trash2, Printer } from 'lucide-react';
+import { useAuth } from '../../../core/contexts/AuthContext';
+import { useRegion } from '../../../core/contexts/RegionContext';
+import { useExchangeRates } from '../../../core/contexts/ExchangeRatesContext';
+import { FilterBar } from '../../../core/components/FilterBar/FilterBar';
+import { DataTable } from '../../../core/components/DataTable/DataTable';
+import { CurrencyDisplay } from '../../../core/components/Typography/CurrencyDisplay';
+import { mealApi } from '../api';
+import type { MealCalculation } from '../types';
+import { MealDrawer } from '../components/MealDrawer';
+import { Dialog } from '../../../core/components/Dialog/Dialog';
+import { MealPrintView } from '../components/MealPrintView';
+import { BatchMealPrintView } from '../components/BatchMealPrintView';
+import { Modal } from '../../../core/components/Modal/Modal';
+import { supabase } from '../../../lib/supabase';
+import { SearchableSelect } from '../../../core/components/Form/SearchableSelect';
+import { useTranslation } from 'react-i18next';
+
+export function MealsPage() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const { region } = useRegion();
+  const { rates } = useExchangeRates();
+  const [data, setData] = useState<MealCalculation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const [companies, setCompanies] = useState<{ id: string, name: string }[]>([]);
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const [printMeal, setPrintMeal] = useState<MealCalculation | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const [showBatchPrint, setShowBatchPrint] = useState(false);
+  const batchPrintRef = useRef<HTMLDivElement>(null);
+  
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setPageError(null);
+      const meals = await mealApi.getAll(region);
+      setData(meals);
+    } catch (error: any) {
+      console.error('Error loading meals:', error);
+      setPageError(error.message || JSON.stringify(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCompanies = async () => {
+    const { data } = await supabase
+      .from('companies')
+      .select('id, name, region')
+      .order('name');
+    if (data) {
+      setCompanies(data.filter(c => !region || c.region === region));
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    loadCompanies();
+  }, [region]);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await mealApi.delete(deleteId);
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting meal calculation:', error);
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handlePrint = () => {
+    if (!printRef.current) return;
+    const printContent = printRef.current.innerHTML;
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${t('meals.printInvoice', 'Fatura Yazdır')}</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <style>
+              @media print {
+                @page { size: landscape; margin: 10mm; }
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body onload="window.print(); window.close();">
+            ${printContent}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('tr-TR');
+  };
+
+  const columns = [
+    { key: 'tarih', header: t('common.date', 'Tarih'), width: '12%', render: (row: MealCalculation) => formatDate(row.created_at || row.entry_date) },
+    { key: 'sirket', header: t('meals.company', 'Şirket'), width: '15%', render: (row: MealCalculation) => row.company_name || '-' },
+    { key: 'otel', header: t('meals.hotel', 'Otel'), width: '15%', render: (row: MealCalculation) => row.hotel_name },
+    { key: 'giris', header: t('meals.checkIn', 'Giriş'), width: '12%', render: (row: MealCalculation) => formatDate(row.entry_date) },
+    { key: 'cikis', header: t('meals.checkOut', 'Çıkış'), width: '12%', render: (row: MealCalculation) => formatDate(row.exit_date) },
+    { key: 'kisi', header: t('meals.pax', 'Kişi'), width: '8%', render: (row: MealCalculation) => row.pax_count },
+    { key: 'gun', header: t('meals.days', 'Gün'), width: '8%', render: (row: MealCalculation) => row.total_days },
+    { 
+      key: 'tutar',
+      header: t('meals.amount', 'Tutar'), 
+      width: '12%',
+      align: 'right' as const,
+      render: (row: MealCalculation) => {
+        const rate = rates['SAR'] || 3.75;
+        let eqAmount = 0;
+        let eqCurrency = '';
+        if (row.currency === 'SAR') { eqAmount = row.total_amount / rate; eqCurrency = 'USD'; }
+        else if (row.currency === 'USD') { eqAmount = row.total_amount * rate; eqCurrency = 'SAR'; }
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+            <div style={{ fontWeight: 600 }}><CurrencyDisplay amount={row.total_amount} currency={row.currency} /></div>
+            {eqAmount > 0 && (
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                ~ {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(eqAmount)} {eqCurrency}
+              </div>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'islemler',
+      header: t('common.actions', 'İşlemler'),
+      width: '6%',
+      align: 'right' as const,
+      render: (row: MealCalculation) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="btn-text"
+            style={{ padding: '6px', color: 'var(--accent)', backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+            title={t('meals.printInvoiceTooltip', 'Yazdır / Fatura')}
+            onClick={() => setPrintMeal(row)}
+          >
+            <Printer size={16} />
+          </button>
+          {(user?.role === 'admin' || user?.role === 'editor') && (
+            <button 
+              className="btn-text"
+              style={{ padding: '6px', color: 'var(--error)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+              title={t('common.delete', 'Sil')}
+              onClick={() => setDeleteId(row.id)}
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  const filteredData = useMemo(() => {
+    let result = data;
+
+    if (companyFilter) {
+      result = result.filter(item => item.company_id === companyFilter);
+    }
+
+    if (startDate) {
+      result = result.filter(item => item.entry_date >= startDate);
+    }
+    
+    if (endDate) {
+      result = result.filter(item => item.entry_date <= endDate);
+    }
+
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter(item => 
+        item.hotel_name.toLowerCase().includes(lowerSearch) ||
+        (item.company_name && item.company_name.toLowerCase().includes(lowerSearch))
+      );
+    }
+    
+    return result;
+  }, [data, searchTerm, companyFilter, startDate, endDate]);
+
+  return (
+    <div className="page-container">
+      <div className="page-header">
+        <div style={{ marginBottom: '24px' }}>
+          <h1>{t('meals.pageTitle', 'Yemek Hesabı')}</h1>
+          <p className="text-muted">{t('meals.pageSubtitle', 'Acentalara ait giriş/çıkış ve öğün hesaplamaları.')}</p>
+        </div>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <FilterBar
+            onSearch={setSearchTerm}
+            addLabel={t('meals.newCalculation', 'Yeni Hesaplama')}
+            onAdd={(user?.role === 'admin' || user?.role === 'editor') ? () => setIsDrawerOpen(true) : undefined}
+            actionsRight={
+              <button 
+                className="btn-secondary" 
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                onClick={() => setShowBatchPrint(true)}
+                disabled={filteredData.length === 0}
+              >
+                <Printer size={18} />
+                {t('meals.batchPrint', 'Toplu Yazdır')}
+              </button>
+            }
+          >
+            <div style={{ width: '160px' }}>
+              <SearchableSelect 
+                value={companyFilter}
+                onChange={setCompanyFilter}
+                options={[
+                  { value: '', label: t('meals.allCompanies', 'Tüm Şirketler') },
+                  ...companies.map(c => ({ value: c.id, label: c.name }))
+                ]}
+              />
+            </div>
+            
+            <input 
+              type="date" 
+              className="form-control" 
+              style={{ width: '130px', fontSize: '13px', padding: '6px' }}
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              title={t('meals.startDate', 'Başlangıç Tarihi')}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>-</span>
+            <input 
+              type="date" 
+              className="form-control" 
+              style={{ width: '130px', fontSize: '13px', padding: '6px' }}
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              title={t('meals.endDate', 'Bitiş Tarihi')}
+            />
+          </FilterBar>
+        </div>
+      </div>
+
+      <div className="page-content">
+        {pageError && (
+          <div style={{ padding: '16px', marginBottom: '16px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#EF4444' }}>
+            <strong>{t('meals.errorLoading', 'Veriler yüklenirken hata oluştu:')}</strong> {pageError}
+          </div>
+        )}
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          
+          emptyMessage={t('meals.noRecordsFound', 'Henüz yemek hesabı kaydı bulunmuyor.')}
+        />
+      </div>
+
+      <MealDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSuccess={loadData}
+        initialRegion={region}
+      />
+
+      <Dialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title={t('meals.deleteAccount', 'Hesabı Sil')}
+        message={t('meals.deleteConfirmMsg', 'Bu yemek hesabını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')}
+        type="danger"
+        confirmText={t('common.delete', 'Sil')}
+        cancelText={t('common.cancel', 'İptal')}
+      />
+
+      <Modal
+        isOpen={!!printMeal}
+        onClose={() => setPrintMeal(null)}
+        title={t('meals.invoicePreview', 'Fatura / Çıktı Önizleme')}
+        width="1000px"
+      >
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <button onClick={handlePrint} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Printer size={18} />
+            {t('common.print', 'Yazdır')}
+          </button>
+        </div>
+        <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', maxHeight: '60vh', overflowY: 'auto' }}>
+          {printMeal && (
+            <div ref={printRef}>
+              <MealPrintView meal={printMeal} />
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showBatchPrint}
+        onClose={() => setShowBatchPrint(false)}
+        title={t('meals.batchPrintPreview', 'Toplu Yazdır / Çıktı Önizleme')}
+        width="1100px"
+      >
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <button 
+            onClick={() => {
+              if (!batchPrintRef.current) return;
+              const printContent = batchPrintRef.current.innerHTML;
+              const printWindow = window.open('', '_blank', 'width=1200,height=800');
+              if (printWindow) {
+                printWindow.document.write(`
+                  <html>
+                    <head>
+                      <title>{t('meals.batchPrintInvoice', 'Toplu Fatura Yazdır')}</title>
+                      <script src="https://cdn.tailwindcss.com"></script>
+                      <style>
+                        @media print {
+                          @page { size: landscape; margin: 10mm; }
+                          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        }
+                      </style>
+                    </head>
+                    <body onload="window.print(); window.close();">
+                      ${printContent}
+                    </body>
+                  </html>
+                `);
+                printWindow.document.close();
+              }
+            }} 
+            className="btn-primary" 
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Printer size={18} />
+            {t('common.print', 'Yazdır')}
+          </button>
+        </div>
+        <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', maxHeight: '60vh', overflowY: 'auto' }}>
+          <div ref={batchPrintRef}>
+            <BatchMealPrintView meals={filteredData} />
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}

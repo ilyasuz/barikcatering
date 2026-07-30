@@ -1,0 +1,80 @@
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 1000;
+  transition: background 0.3s ease;
+  pointer-events: none;
+}
+
+.drawer-overlay.open {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  pointer-events: all;
+}
+
+.drawer-content {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 30, 35, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  -webkit-app-region: no-drag;
+}
+
+.drawer-content.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 40px 24px 24px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-app-region: drag;
+}
+
+.drawer-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.drawer-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.drawer-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}

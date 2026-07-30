@@ -1,0 +1,249 @@
+:root {
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Color Palette */
+  --accent: #3B82F6;
+  --accent-hover: #2563EB;
+  
+  --bg-primary: rgba(30, 30, 35, 0.2); /* More transparent for Mica */
+  --bg-secondary: rgba(40, 40, 45, 0.3);
+  --bg-tertiary: rgba(50, 50, 55, 0.4);
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: #E5E7EB;
+  --text-muted: #A1A1AA;
+  
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-radius: 12px;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Success, Warning, Error */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-inter);
+  background: transparent;
+  color: var(--text-primary);
+  user-select: none;
+  overflow: hidden;
+  color-scheme: dark;
+}
+
+#root {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  box-sizing: border-box;
+}
+
+/* UI Elements that should not be draggable */
+button, input, select, textarea, a, tr, .clickable, .no-drag {
+  -webkit-app-region: no-drag;
+}
+
+input, textarea, .form-control {
+  user-select: auto;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+p {
+  margin: 0;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Global Button Styles */
+button {
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary, .primary-button {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 13px;
+  height: 36px;
+}
+
+.btn-primary:hover:not(:disabled), .primary-button:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary, .secondary-button {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 13px;
+  height: 36px;
+}
+
+.btn-secondary:hover:not(:disabled), .secondary-button:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--accent);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.btn-text:hover:not(:disabled) {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Electron Print Bug Fix: Remove drag regions before printing */
+body.is-printing * {
+  -webkit-app-region: no-drag !important;
+}
+
+@media print {
+  body, html, #root {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  vite-error-overlay, vite-plugin-checker-error-overlay {
+    display: none !important;
+  }
+  * {
+    -webkit-app-region: no-drag !important;
+  }
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+  .no-print, .screen-only {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .sidebar, .topbar, .page-header {
+    display: none !important;
+  }
+  .app-container, .main-content, .page-content {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .invoice-print-container {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  * {
+    color: black !important;
+  }
+  .status-badge {
+    border: 1px solid #000 !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+  
+  /* Make all tables look like formal official documents (like MealsPage) */
+  table, .core-table, .data-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    border: 2px solid black !important;
+  }
+  th, td, .core-table th, .core-table td, .data-table th, .data-table td {
+    border: 1px solid black !important;
+    color: black !important;
+    padding: 8px !important;
+  }
+  th, .core-table th, .data-table th {
+    background-color: #f3f4f6 !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+  }
+  
+  /* Clean up layout for print */
+  .kpi-card {
+    border: 1px solid black !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: black !important;
+    margin-bottom: 16px !important;
+  }
+  .table-container, .data-table-container {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .kpi-card div {
+    color: black !important;
+  }
+}
+
+/* Global Select Options Styling */
+select option {
+  background-color: #1E1E23;
+  color: var(--text-primary);
+}

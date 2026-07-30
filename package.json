@@ -1,0 +1,57 @@
+{
+  "name": "barik-muhasebe",
+  "private": true,
+  "main": "dist-electron/main.js",
+  "version": "2.0.0",
+  "type": "module",
+  "build": {
+    "appId": "com.barik.muhasebe",
+    "productName": "Barik Muhasebe",
+    "directories": {
+      "output": "release-v2"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "package": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
+    "exceljs": "^4.4.0",
+    "i18next": "^26.3.6",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^1.25.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.10",
+    "react-router-dom": "^7.18.1",
+    "recharts": "^3.10.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "vite-plugin-electron": "^1.1.0",
+    "vite-plugin-electron-renderer": "^1.0.0"
+  }
+}

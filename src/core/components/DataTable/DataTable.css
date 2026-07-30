@@ -1,0 +1,76 @@
+.page-container {
+  padding: 24px;
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.core-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.core-table th {
+  padding: 14px 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.core-table td {
+  padding: 16px;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.core-table tbody tr {
+  transition: background 0.2s;
+}
+
+.core-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.core-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.core-table tbody tr.clickable {
+  cursor: pointer;
+}
+
+.empty-cell {
+  text-align: center !important;
+  color: var(--text-muted) !important;
+  padding: 32px !important;
+  font-style: italic;
+}
+
+.table-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.selected-row {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.selected-row:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}

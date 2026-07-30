@@ -1,0 +1,81 @@
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.modern-table th {
+  padding: 12px 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.modern-table td {
+  padding: 16px;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.modern-table tbody tr {
+  transition: background 0.2s;
+}
+
+.modern-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.desc-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.desc-text {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.category-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.amount {
+  font-family: var(--font-inter);
+  font-weight: 600;
+}
+
+.amount.positive {
+  color: var(--success);
+}
+
+.status-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.status-badge.completed {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}

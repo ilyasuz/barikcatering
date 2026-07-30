@@ -1,0 +1,198 @@
+.topbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 140px 0 24px; /* Native kontroller için sağda 140px boşluk */
+  background: transparent;
+  border-bottom: 1px solid var(--border-color);
+  -webkit-app-region: drag;
+}
+
+.topbar-search {
+  display: flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0 12px;
+  width: 320px;
+  height: 36px;
+  -webkit-app-region: no-drag;
+  transition: all 0.2s ease;
+}
+
+.topbar-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.search-icon {
+  color: var(--text-muted);
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 0 8px;
+  font-family: var(--font-inter);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-shortcut {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  -webkit-app-region: no-drag;
+}
+
+.company-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.company-selector:hover {
+  background: var(--bg-tertiary);
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.company-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.company-country {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.icon-button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.icon-button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.notification-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+}
+
+.user-profile {
+  cursor: pointer;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.region-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: rgba(30, 30, 35, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 999;
+}
+
+.region-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.region-option:hover {
+  background: var(--bg-tertiary);
+}
+
+.region-option.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+}
+
+.check-icon {
+  color: var(--accent);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}

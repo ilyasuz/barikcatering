@@ -1,0 +1,59 @@
+/* StatusBadge Styles */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.status-completed, .status-active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399; /* Emerald 400 */
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24; /* Amber 400 */
+}
+
+.status-overdue, .status-cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171; /* Red 400 */
+}
+
+.status-inactive {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af; /* Gray 400 */
+}
+
+/* CurrencyDisplay Styles */
+.currency-display {
+  font-family: var(--font-inter);
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.currency-display.positive {
+  color: var(--text-primary);
+}
+
+.currency-display.negative {
+  color: #f87171;
+}
+
+.currency-symbol {
+  margin-right: 2px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.currency-code {
+  font-size: 0.85em;
+  opacity: 0.6;
+  font-weight: 500;
+  margin-left: 2px;
+}
