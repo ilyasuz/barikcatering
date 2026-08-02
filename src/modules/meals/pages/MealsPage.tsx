@@ -14,6 +14,9 @@ import { ExcursionModal } from '../components/ExcursionModal';
 import { MealDetailModal } from '../components/MealDetailModal';
 import { Dialog } from '../../../core/components/Dialog/Dialog';
 import { MealPrintView } from '../components/MealPrintView';
+import { MealTemplatePrintView } from '../components/MealTemplatePrintView';
+import { MealExportModal } from '../components/MealExportModal';
+import type { MealExportTemplate } from '../../../core/utils/mealExcelExport';
 import { BatchMealPrintView } from '../components/BatchMealPrintView';
 import { Modal } from '../../../core/components/Modal/Modal';
 import { supabase } from '../../../lib/supabase';
@@ -50,7 +53,9 @@ export function MealsPage() {
     return Array.from(set).sort();
   }, [data]);
 
+  const [exportMeal, setExportMeal] = useState<MealCalculation | null>(null);
   const [printMeal, setPrintMeal] = useState<MealCalculation | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<MealExportTemplate>('standard');
   const printRef = useRef<HTMLDivElement>(null);
 
   const [showBatchPrint, setShowBatchPrint] = useState(false);
@@ -212,8 +217,8 @@ export function MealsPage() {
           <button 
             className="btn-text"
             style={{ padding: '6px', color: 'var(--accent)', backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
-            title={t('meals.printInvoiceTooltip', 'Yazdır / Fatura')}
-            onClick={(e) => { e.stopPropagation(); setPrintMeal(row); }}
+            title={t('meals.printInvoiceTooltip', 'Yazdır / İndir (Şablonlar)')}
+            onClick={(e) => { e.stopPropagation(); setExportMeal(row); }}
           >
             <Printer size={16} />
           </button>
@@ -357,8 +362,18 @@ export function MealsPage() {
         isOpen={!!detailMeal}
         onClose={() => setDetailMeal(null)}
         meal={detailMeal}
-        onPrint={(m) => setPrintMeal(m)}
+        onPrint={(m) => setExportMeal(m)}
         onEditExcursion={(m) => setExcursionMeal(m)}
+      />
+
+      <MealExportModal
+        isOpen={!!exportMeal}
+        onClose={() => setExportMeal(null)}
+        meal={exportMeal}
+        onPrintWithTemplate={(m, tpl) => {
+          setPrintMeal(m);
+          setSelectedTemplate(tpl);
+        }}
       />
 
       <Dialog
@@ -387,7 +402,7 @@ export function MealsPage() {
         <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', maxHeight: '60vh', overflowY: 'auto' }}>
           {printMeal && (
             <div ref={printRef}>
-              <MealPrintView meal={printMeal} />
+              <MealTemplatePrintView meal={printMeal} template={selectedTemplate} />
             </div>
           )}
         </div>

@@ -253,7 +253,7 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
             onClick={() => { onClose(); onPrint(meal); }}
           >
             <Printer size={16} />
-            <span>{t('meals.printInvoice', 'Faturayı / Hesabı Yazdır')}</span>
+            <span>{t('meals.selectTemplateExport', 'Şablonlu İndir & Yazdır')}</span>
           </button>
 
           <button type="button" className="btn-secondary" onClick={onClose}>
