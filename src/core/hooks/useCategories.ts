@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 const DEFAULT_INCOME_CATEGORIES = [
+  'Catering (Kahvaltı/Akşam Yemeği)',
   'Catering (Kahvaltı)',
   'Catering (Akşam Yemeği)',
   'Kira (Ev)',
@@ -10,8 +11,6 @@ const DEFAULT_INCOME_CATEGORIES = [
 
 const DEFAULT_EXPENSE_CATEGORIES = [
   'Tediye (Ödeme Yapma)',
-  'Maaş Tahakkuku (Hak Ediş)',
-  'Personel Maaşı',
   'Mutfak/Erzak',
   'Araç/Yakıt',
   'Toptancı / Hal',
@@ -33,10 +32,13 @@ export function useCategories() {
     if (storedIncome) {
       try {
         let parsed = JSON.parse(storedIncome);
-        // Filter out the requested removals
         parsed = parsed.filter((c: string) => !c.toLowerCase().includes('tahsilat'));
         
-        // Deduplicate case-insensitively
+        // Ensure Catering (Kahvaltı/Akşam Yemeği) is at the top if missing
+        if (!parsed.includes('Catering (Kahvaltı/Akşam Yemeği)')) {
+          parsed.unshift('Catering (Kahvaltı/Akşam Yemeği)');
+        }
+        
         const unique: string[] = [];
         const seen = new Set();
         parsed.forEach((c: string) => {
@@ -60,15 +62,11 @@ export function useCategories() {
       try {
         let parsed = JSON.parse(storedExpense);
         
-        // Map old incorrectly spelled defaults to new ones
-        parsed = parsed.map((c: string) => {
-          if (c === 'Personel Maaş' || c === 'Personel Ödemesi / Avans' || c === 'Personel Avans/Ödeme' || c === 'Personel Avans') return 'Personel Maaşı';
-          if (c === 'Personel Maaş Hak Edişi') return 'Maaş Tahakkuku (Hak Ediş)';
-          return c;
+        // Filter out Avans and Maaş/Hak Ediş related categories
+        parsed = parsed.filter((c: string) => {
+          const lower = c.toLowerCase();
+          return !lower.includes('avans') && !lower.includes('maaş') && !lower.includes('hak ediş');
         });
-
-        // Remove any Avans related categories from dropdown
-        parsed = parsed.filter((c: string) => !c.toLowerCase().includes('avans'));
         
         const unique: string[] = [];
         const seen = new Set();
