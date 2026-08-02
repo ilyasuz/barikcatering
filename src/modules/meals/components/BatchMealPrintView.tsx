@@ -96,10 +96,16 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                   {excursionDays > 0 ? (
                     <div>
                       <strong>-{excursionDays} Gün</strong>
-                      <div style={{ fontSize: "10px", marginTop: "1px" }}>
-                        ({formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date)})
-                        {meal.excursion_note ? ` ${meal.excursion_note}` : ''}
-                      </div>
+                      {meal.excursion_note && (
+                        <div style={{ fontSize: "11px", fontWeight: "bold", color: "#991b1b", marginTop: "1px" }}>
+                          {meal.excursion_note}
+                        </div>
+                      )}
+                      {meal.excursion_start_date && (
+                        <div style={{ fontSize: "10px", color: "#4b5563" }}>
+                          ({formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date || meal.excursion_start_date)})
+                        </div>
+                      )}
                       <div style={{ fontSize: "10px", fontWeight: "bold", color: "#dc2626" }}>
                         (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency})
                       </div>

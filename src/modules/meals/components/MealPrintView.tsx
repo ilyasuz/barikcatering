@@ -102,10 +102,16 @@ export const MealPrintView = forwardRef<HTMLDivElement, MealPrintViewProps>(({ m
               {excursionDays > 0 ? (
                 <div>
                   <strong style={{ fontSize: "14px" }}>-{excursionDays} Gün</strong>
-                  <div style={{ fontSize: "10px", marginTop: "2px", color: "#991b1b" }}>
-                    ({formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date)})
-                    {meal.excursion_note ? ` ${meal.excursion_note}` : ''}
-                  </div>
+                  {meal.excursion_note && (
+                    <div style={{ fontSize: "12px", fontWeight: "bold", color: "#991b1b", marginTop: "2px" }}>
+                      {meal.excursion_note}
+                    </div>
+                  )}
+                  {meal.excursion_start_date && (
+                    <div style={{ fontSize: "11px", color: "#4b5563", marginTop: "1px" }}>
+                      ({formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date || meal.excursion_start_date)})
+                    </div>
+                  )}
                   <div style={{ fontSize: "11px", fontWeight: "bold", color: "#dc2626", marginTop: "2px" }}>
                     (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency})
                   </div>
