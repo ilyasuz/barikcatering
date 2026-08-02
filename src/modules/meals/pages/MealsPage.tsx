@@ -8,6 +8,7 @@ import { DataTable } from '../../../core/components/DataTable/DataTable';
 import { CurrencyDisplay } from '../../../core/components/Typography/CurrencyDisplay';
 import { mealApi } from '../api';
 import type { MealCalculation } from '../types';
+import { getExcursionsFromMeal } from '../types';
 import { MealDrawer } from '../components/MealDrawer';
 import { ExcursionModal } from '../components/ExcursionModal';
 import { MealDetailModal } from '../components/MealDetailModal';
@@ -137,17 +138,27 @@ export function MealsPage() {
     { 
       key: 'gun', 
       header: t('meals.days', 'Gün'), 
-      width: '11%', 
-      render: (row: MealCalculation) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{row.total_days} gün</div>
-          {(row.excursion_days || 0) > 0 && (
-            <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '2px' }} title={row.excursion_note || ''}>
-              ⛺ -{row.excursion_days}g {row.excursion_note ? `(${row.excursion_note})` : 'gezi'}
-            </div>
-          )}
-        </div>
-      )
+      width: '12%', 
+      render: (row: MealCalculation) => {
+        const excursions = getExcursionsFromMeal(row);
+        const totalExDays = row.excursion_days || 0;
+        const notes = excursions.map(e => e.note).filter(Boolean).join(', ');
+        const tooltip = excursions.map(e => `${e.note || 'Gezi'}: ${e.days}g (${e.start_date} - ${e.end_date})`).join('\n');
+
+        return (
+          <div>
+            <div style={{ fontWeight: 600 }}>{row.total_days} gün</div>
+            {totalExDays > 0 && (
+              <div 
+                style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '2px' }} 
+                title={tooltip || `${totalExDays} gün gezi düşüşü`}
+              >
+                ⛺ -{totalExDays}g {notes ? `(${notes})` : 'gezi'}
+              </div>
+            )}
+          </div>
+        );
+      }
     },
     { 
       key: 'tutar',
