@@ -37,6 +37,18 @@ export const mealApi = {
     return result;
   },
 
+  async update(id: string, data: Partial<MealCalculation>): Promise<MealCalculation> {
+    const { data: result, error } = await supabase
+      .from('meal_calculations')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  },
+
   async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('meal_calculations')

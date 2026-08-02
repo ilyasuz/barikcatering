@@ -17,6 +17,12 @@ export interface MealCalculation {
   region: string;
   created_at?: string;
   
+  // excursion fields
+  excursion_start_date?: string;
+  excursion_end_date?: string;
+  excursion_days?: number;
+  excursion_note?: string;
+
   // joined from companies
   company_name?: string;
 }
@@ -37,4 +43,9 @@ export interface CreateMealCalculationDTO {
   total_amount: number;
   currency: string;
   region: string;
+  
+  excursion_start_date?: string;
+  excursion_end_date?: string;
+  excursion_days?: number;
+  excursion_note?: string;
 }

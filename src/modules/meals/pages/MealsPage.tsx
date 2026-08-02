@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, Trash2, Printer } from 'lucide-react';
+import { Plus, Trash2, Printer, Compass } from 'lucide-react';
 import { useAuth } from '../../../core/contexts/AuthContext';
 import { useRegion } from '../../../core/contexts/RegionContext';
 import { useExchangeRates } from '../../../core/contexts/ExchangeRatesContext';
@@ -9,6 +9,7 @@ import { CurrencyDisplay } from '../../../core/components/Typography/CurrencyDis
 import { mealApi } from '../api';
 import type { MealCalculation } from '../types';
 import { MealDrawer } from '../components/MealDrawer';
+import { ExcursionModal } from '../components/ExcursionModal';
 import { Dialog } from '../../../core/components/Dialog/Dialog';
 import { MealPrintView } from '../components/MealPrintView';
 import { BatchMealPrintView } from '../components/BatchMealPrintView';
@@ -27,6 +28,7 @@ export function MealsPage() {
   const [pageError, setPageError] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [excursionMeal, setExcursionMeal] = useState<MealCalculation | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   const [companies, setCompanies] = useState<{ id: string, name: string }[]>([]);
@@ -118,7 +120,21 @@ export function MealsPage() {
     { key: 'giris', header: t('meals.checkIn', 'Giriş'), width: '12%', render: (row: MealCalculation) => formatDate(row.entry_date) },
     { key: 'cikis', header: t('meals.checkOut', 'Çıkış'), width: '12%', render: (row: MealCalculation) => formatDate(row.exit_date) },
     { key: 'kisi', header: t('meals.pax', 'Kişi'), width: '8%', render: (row: MealCalculation) => row.pax_count },
-    { key: 'gun', header: t('meals.days', 'Gün'), width: '8%', render: (row: MealCalculation) => row.total_days },
+    { 
+      key: 'gun', 
+      header: t('meals.days', 'Gün'), 
+      width: '9%', 
+      render: (row: MealCalculation) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{row.total_days}</div>
+          {(row.excursion_days || 0) > 0 && (
+            <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 500 }} title={row.excursion_note || t('meals.excursionSectionTitle', 'Gezi / Gün Düşüşü')}>
+              (-{row.excursion_days}g gezi)
+            </div>
+          )}
+        </div>
+      )
+    },
     { 
       key: 'tutar',
       header: t('meals.amount', 'Tutar'), 
@@ -146,10 +162,20 @@ export function MealsPage() {
     {
       key: 'islemler',
       header: t('common.actions', 'İşlemler'),
-      width: '6%',
+      width: '8%',
       align: 'right' as const,
       render: (row: MealCalculation) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {(user?.role === 'admin' || user?.role === 'editor') && (
+            <button 
+              className="btn-text"
+              style={{ padding: '6px', color: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+              title={t('meals.addExcursionTooltip', 'Gezi Ekle / Düşüş Yap')}
+              onClick={() => setExcursionMeal(row)}
+            >
+              <Compass size={16} />
+            </button>
+          )}
           <button 
             className="btn-text"
             style={{ padding: '6px', color: 'var(--accent)', backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
@@ -274,6 +300,13 @@ export function MealsPage() {
         onClose={() => setIsDrawerOpen(false)}
         onSuccess={loadData}
         initialRegion={region}
+      />
+
+      <ExcursionModal
+        isOpen={!!excursionMeal}
+        onClose={() => setExcursionMeal(null)}
+        meal={excursionMeal}
+        onSuccess={loadData}
       />
 
       <Dialog

@@ -92,6 +92,24 @@ export const MealPrintView = forwardRef<HTMLDivElement, MealPrintViewProps>(({ m
             <td style={{ border: "1px solid black", padding: "8px" }}>{meal.evening_price}</td>
             <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", fontSize: "18px" }}>{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(meal.total_amount)}</td>
           </tr>
+          {/* Excursion Deduction Row if applicable */}
+          {(meal.excursion_days || 0) > 0 && (
+            <tr style={{ backgroundColor: "#fef2f2", color: "#991b1b", fontSize: "13px" }}>
+              <td colSpan={9} style={{ border: "1px solid black", padding: "8px", textAlign: "left" }}>
+                <strong>{t('meals.excursionDeductionPrint', 'GEZİ DÜŞÜŞÜ / خصم الرحلة')}:</strong> {meal.excursion_note || ''} 
+                {meal.excursion_start_date ? ` (${formatDate(meal.excursion_start_date)} - ${formatDate(meal.excursion_end_date || meal.excursion_start_date)})` : ''}
+              </td>
+              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", backgroundColor: "#fecaca" }}>
+                -{meal.excursion_days}
+              </td>
+              <td colSpan={2} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }}>
+                -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format((meal.excursion_days || 0) * meal.pax_count * (meal.morning_price + meal.evening_price))} {meal.currency}
+              </td>
+              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", color: "#dc2626" }}>
+                -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format((meal.excursion_days || 0) * meal.pax_count * (meal.morning_price + meal.evening_price))}
+              </td>
+            </tr>
+          )}
           {/* Total Row */}
           <tr style={{ backgroundColor: "#f3f4f6", fontWeight: "bold" }}>
             <td colSpan={9} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }} dir="rtl">المجموع الإجمالي</td>

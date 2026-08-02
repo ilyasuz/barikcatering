@@ -94,33 +94,22 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
     const diffTime = Math.abs(exitDate.getTime() - entryDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     
-    // Using formula: (Days diff) - 1 + Entry meals + Exit meals
-    // Exception: If same day, diff is 0, so 0 - 1 + entry + exit.
     let baseDays = diffDays - 1;
-    let days = baseDays 
+    let grossDays = baseDays 
                + formData.entry_morning + formData.entry_evening 
                + formData.exit_morning + formData.exit_evening;
 
-    // Prevent negative days logic if entered incorrectly?
-    // We'll trust the math just like in the Excel.
-    
     const pax = formData.pax_count || 0;
     const mp = formData.morning_price || 0;
     const ep = formData.evening_price || 0;
 
-    // If day diff is 0 (same day), calculation still works: 
-    // e.g. entry morning 0.5, exit evening 0 -> days = 0 - 1 + 0.5 + 0.5 + 0.5 + 0 = 0.5
-    // Wait, if they check in and check out same day, and have all meals? Excel said -741 so maybe it's exact.
-    
-    // But wait! Total amount = Days * Pax * (MorningPrice + EveningPrice)
-    // Wait, in Excel, if a meal is skipped, does it deduct from price or day count?
-    // The formula in Excel adjusts DAY COUNT, and then multiplies by (MP + EP).
-    // Let's replicate this exactly.
-    const totalAmount = days * pax * (mp + ep);
+    const excursionDays = formData.excursion_days || 0;
+    const netDays = Math.max(0, grossDays - excursionDays);
+    const totalAmount = netDays * pax * (mp + ep);
 
     setFormData(prev => ({
       ...prev,
-      total_days: days,
+      total_days: netDays,
       total_amount: totalAmount
     }));
   };
@@ -315,6 +304,113 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
               />
             </div>
           )}
+
+          {/* Excursion Section */}
+          <div style={{
+            marginTop: '16px',
+            marginBottom: '16px',
+            padding: '16px',
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '8px',
+            border: '1px dashed var(--border-color)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--accent)' }}>
+                ⛺ {t('meals.excursionSectionTitle', 'Gezi / Gün Düşüşü')}
+              </span>
+              {(formData.excursion_days || 0) > 0 && (
+                <button
+                  type="button"
+                  className="btn-text"
+                  style={{ fontSize: '12px', color: '#EF4444' }}
+                  onClick={() => setFormData({
+                    ...formData,
+                    excursion_start_date: '',
+                    excursion_end_date: '',
+                    excursion_days: 0,
+                    excursion_note: ''
+                  })}
+                >
+                  {t('meals.removeExcursion', 'Geziyi Kaldır')}
+                </button>
+              )}
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">{t('meals.excursionStartDate', 'Gezi Başlangıç Tarihi')}</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.excursion_start_date || ''}
+                  onChange={e => {
+                    const sDate = e.target.value;
+                    const eDate = formData.excursion_end_date || sDate;
+                    let days = formData.excursion_days || 0;
+                    if (sDate && eDate) {
+                      const diffTime = new Date(eDate).getTime() - new Date(sDate).getTime();
+                      if (diffTime >= 0) {
+                        days = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      }
+                    }
+                    setFormData({
+                      ...formData,
+                      excursion_start_date: sDate,
+                      excursion_end_date: eDate,
+                      excursion_days: days
+                    });
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{t('meals.excursionEndDate', 'Gezi Bitiş Tarihi')}</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.excursion_end_date || ''}
+                  onChange={e => {
+                    const eDate = e.target.value;
+                    const sDate = formData.excursion_start_date || eDate;
+                    let days = formData.excursion_days || 0;
+                    if (sDate && eDate) {
+                      const diffTime = new Date(eDate).getTime() - new Date(sDate).getTime();
+                      if (diffTime >= 0) {
+                        days = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      }
+                    }
+                    setFormData({
+                      ...formData,
+                      excursion_end_date: eDate,
+                      excursion_days: days
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">{t('meals.excursionDays', 'Düşülecek Gün Sayısı')}</label>
+                <FormattedNumberInput
+                  className="form-control"
+                  value={formData.excursion_days || 0}
+                  onChange={val => setFormData({ ...formData, excursion_days: val })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{t('meals.excursionNote', 'Gezi Notu / Açıklama')}</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder={t('meals.excursionNotePlaceholder', 'Örn: Mekke Gezisi')}
+                  value={formData.excursion_note || ''}
+                  onChange={e => setFormData({ ...formData, excursion_note: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Results Display */}
           <div style={{ marginTop: '24px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
