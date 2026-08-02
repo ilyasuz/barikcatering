@@ -77,43 +77,66 @@ export const MealPrintView = forwardRef<HTMLDivElement, MealPrintViewProps>(({ m
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.company_name}</td>
-            <td style={{ border: "1px solid black", padding: "8px" }}>{meal.hotel_name}</td>
-            <td style={{ border: "1px solid black", padding: "8px" }}>{formatDate(meal.entry_date)}</td>
-            <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.entry_morning > 0 ? '0,5' : '-'}</td>
-            <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.entry_evening > 0 ? '0,5' : '-'}</td>
-            <td style={{ border: "1px solid black", padding: "8px" }}>{formatDate(meal.exit_date)}</td>
-            <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
-            <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
-            <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.pax_count}</td>
-            <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", backgroundColor: "#fef3c7" }}>{meal.total_days}</td>
-            <td style={{ border: "1px solid black", padding: "8px" }}>{meal.morning_price}</td>
-            <td style={{ border: "1px solid black", padding: "8px" }}>{meal.evening_price}</td>
-            <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", fontSize: "18px" }}>{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(meal.total_amount)}</td>
-          </tr>
-          {/* Excursion Deduction Row if applicable */}
-          {(meal.excursion_days || 0) > 0 && (
-            <tr style={{ backgroundColor: "#fef2f2", color: "#991b1b", fontSize: "13px" }}>
-              <td colSpan={9} style={{ border: "1px solid black", padding: "8px", textAlign: "left" }}>
-                <strong>{t('meals.excursionDeductionPrint', 'GEZİ DÜŞÜŞÜ / خصم الرحلة')}:</strong> {meal.excursion_note || ''} 
-                {meal.excursion_start_date ? ` (${formatDate(meal.excursion_start_date)} - ${formatDate(meal.excursion_end_date || meal.excursion_start_date)})` : ''}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", backgroundColor: "#fecaca" }}>
-                -{meal.excursion_days}
-              </td>
-              <td colSpan={2} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }}>
-                -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format((meal.excursion_days || 0) * meal.pax_count * (meal.morning_price + meal.evening_price))} {meal.currency}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", color: "#dc2626" }}>
-                -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format((meal.excursion_days || 0) * meal.pax_count * (meal.morning_price + meal.evening_price))}
-              </td>
+          {meal.excursion_days && meal.excursion_days > 0 ? (
+            <>
+              {/* Gross Stay Row */}
+              <tr>
+                <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.company_name}</td>
+                <td style={{ border: "1px solid black", padding: "8px" }}>{meal.hotel_name}</td>
+                <td style={{ border: "1px solid black", padding: "8px" }}>{formatDate(meal.entry_date)}</td>
+                <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.entry_morning > 0 ? '0,5' : '-'}</td>
+                <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.entry_evening > 0 ? '0,5' : '-'}</td>
+                <td style={{ border: "1px solid black", padding: "8px" }}>{formatDate(meal.exit_date)}</td>
+                <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
+                <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
+                <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.pax_count}</td>
+                <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.total_days + meal.excursion_days}</td>
+                <td style={{ border: "1px solid black", padding: "8px" }}>{meal.morning_price}</td>
+                <td style={{ border: "1px solid black", padding: "8px" }}>{meal.evening_price}</td>
+                <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>
+                  {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format((meal.total_days + meal.excursion_days) * meal.pax_count * (meal.morning_price + meal.evening_price))}
+                </td>
+              </tr>
+              {/* Excursion Deduction Row */}
+              <tr style={{ backgroundColor: "#fef2f2", color: "#991b1b", fontSize: "13px" }}>
+                <td colSpan={9} style={{ border: "1px solid black", padding: "8px", textAlign: "left" }}>
+                  <strong>⛺ {t('meals.excursionDeductionPrint', 'GEZİ DÜŞÜŞÜ / خصم الرحلة')}:</strong> {meal.excursion_note ? `${meal.excursion_note} ` : ''} 
+                  {meal.excursion_start_date ? ` (${formatDate(meal.excursion_start_date)} - ${formatDate(meal.excursion_end_date || meal.excursion_start_date)})` : ''}
+                </td>
+                <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", backgroundColor: "#fecaca" }}>
+                  -{meal.excursion_days}
+                </td>
+                <td colSpan={2} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }}>
+                  -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(meal.excursion_days * meal.pax_count * (meal.morning_price + meal.evening_price))} {meal.currency}
+                </td>
+                <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", color: "#dc2626" }}>
+                  -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(meal.excursion_days * meal.pax_count * (meal.morning_price + meal.evening_price))}
+                </td>
+              </tr>
+            </>
+          ) : (
+            /* Normal Row if no excursion */
+            <tr>
+              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.company_name}</td>
+              <td style={{ border: "1px solid black", padding: "8px" }}>{meal.hotel_name}</td>
+              <td style={{ border: "1px solid black", padding: "8px" }}>{formatDate(meal.entry_date)}</td>
+              <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.entry_morning > 0 ? '0,5' : '-'}</td>
+              <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.entry_evening > 0 ? '0,5' : '-'}</td>
+              <td style={{ border: "1px solid black", padding: "8px" }}>{formatDate(meal.exit_date)}</td>
+              <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
+              <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
+              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.pax_count}</td>
+              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", backgroundColor: "#fef3c7" }}>{meal.total_days}</td>
+              <td style={{ border: "1px solid black", padding: "8px" }}>{meal.morning_price}</td>
+              <td style={{ border: "1px solid black", padding: "8px" }}>{meal.evening_price}</td>
+              <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", fontSize: "18px" }}>{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(meal.total_amount)}</td>
             </tr>
           )}
-          {/* Total Row */}
+
+          {/* Total Row (Net) */}
           <tr style={{ backgroundColor: "#f3f4f6", fontWeight: "bold" }}>
             <td colSpan={9} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }} dir="rtl">المجموع الإجمالي</td>
-            <td style={{ border: "1px solid black", padding: "8px" }}>{t('meals.grand', 'GENEL')}</td>
+            <td style={{ border: "1px solid black", padding: "8px", backgroundColor: "#fde047" }}>{meal.total_days} gün</td>
             <td colSpan={2} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }}>{t('meals.total', 'TOPLAM')} {meal.currency}</td>
             <td style={{ border: "1px solid black", padding: "8px", fontSize: "18px", color: "#15803d", backgroundColor: "#fde047" }}>
               {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(meal.total_amount)}

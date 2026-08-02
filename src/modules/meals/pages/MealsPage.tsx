@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, Trash2, Printer, Compass } from 'lucide-react';
+import { Plus, Trash2, Printer, Compass, Eye } from 'lucide-react';
 import { useAuth } from '../../../core/contexts/AuthContext';
 import { useRegion } from '../../../core/contexts/RegionContext';
 import { useExchangeRates } from '../../../core/contexts/ExchangeRatesContext';
@@ -10,6 +10,7 @@ import { mealApi } from '../api';
 import type { MealCalculation } from '../types';
 import { MealDrawer } from '../components/MealDrawer';
 import { ExcursionModal } from '../components/ExcursionModal';
+import { MealDetailModal } from '../components/MealDetailModal';
 import { Dialog } from '../../../core/components/Dialog/Dialog';
 import { MealPrintView } from '../components/MealPrintView';
 import { BatchMealPrintView } from '../components/BatchMealPrintView';
@@ -29,6 +30,7 @@ export function MealsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [excursionMeal, setExcursionMeal] = useState<MealCalculation | null>(null);
+  const [detailMeal, setDetailMeal] = useState<MealCalculation | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   const [companies, setCompanies] = useState<{ id: string, name: string }[]>([]);
@@ -162,10 +164,18 @@ export function MealsPage() {
     {
       key: 'islemler',
       header: t('common.actions', 'İşlemler'),
-      width: '8%',
+      width: '10%',
       align: 'right' as const,
       render: (row: MealCalculation) => (
         <div style={{ display: 'flex', gap: '6px' }}>
+          <button 
+            className="btn-text"
+            style={{ padding: '6px', color: 'var(--text-primary)', backgroundColor: 'var(--bg-secondary)' }}
+            title={t('common.viewDetails', 'Detay Gör')}
+            onClick={() => setDetailMeal(row)}
+          >
+            <Eye size={16} />
+          </button>
           {(user?.role === 'admin' || user?.role === 'editor') && (
             <button 
               className="btn-text"
@@ -228,38 +238,41 @@ export function MealsPage() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <div style={{ marginBottom: '24px' }}>
-          <h1>{t('meals.pageTitle', 'Yemek Hesabı')}</h1>
-          <p className="text-muted">{t('meals.pageSubtitle', 'Acentalara ait giriş/çıkış ve öğün hesaplamaları.')}</p>
+        <div>
+          <h1 className="page-title">{t('meals.title', 'Yemek Hesapları')}</h1>
+          <p className="page-subtitle">{t('meals.subtitle', 'Umre acenta giriş-çıkış yemek hesabı takibi ve faturalandırma')}</p>
         </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {filteredData.length > 0 && (
+            <button className="btn-secondary" onClick={() => setShowBatchPrint(true)}>
+              <Printer size={18} />
+              <span>{t('meals.batchPrint', 'Toplu Yazdır')} ({filteredData.length})</span>
+            </button>
+          )}
+          {(user?.role === 'admin' || user?.role === 'editor') && (
+            <button className="btn-primary" onClick={() => setIsDrawerOpen(true)}>
+              <Plus size={18} />
+              <span>{t('meals.newCalculation', 'Yeni Yemek Hesabı')}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ flex: 1 }}>
+            <SearchableSelect
+              options={[{ value: '', label: t('meals.allCompanies', 'Tüm Şirketler') }, ...companies.map(c => ({ value: c.id, label: c.name }))]}
+              value={companyFilter}
+              onChange={val => setCompanyFilter(val as string)}
+              placeholder={t('meals.allCompanies', 'Tüm Şirketler')}
+            />
+          </div>
           <FilterBar
-            onSearch={setSearchTerm}
-            addLabel={t('meals.newCalculation', 'Yeni Hesaplama')}
-            onAdd={(user?.role === 'admin' || user?.role === 'editor') ? () => setIsDrawerOpen(true) : undefined}
-            actionsRight={
-              <button 
-                className="btn-secondary" 
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                onClick={() => setShowBatchPrint(true)}
-                disabled={filteredData.length === 0}
-              >
-                <Printer size={18} />
-                {t('meals.batchPrint', 'Toplu Yazdır')}
-              </button>
-            }
+            onSearchChange={setSearchTerm}
+            searchValue={searchTerm}
+            placeholder={t('meals.searchPlaceholder', 'Otel adı veya şirket ara...')}
           >
-            <div style={{ width: '160px' }}>
-              <SearchableSelect 
-                value={companyFilter}
-                onChange={setCompanyFilter}
-                options={[
-                  { value: '', label: t('meals.allCompanies', 'Tüm Şirketler') },
-                  ...companies.map(c => ({ value: c.id, label: c.name }))
-                ]}
-              />
-            </div>
-            
             <input 
               type="date" 
               className="form-control" 
@@ -290,7 +303,7 @@ export function MealsPage() {
         <DataTable
           columns={columns}
           data={filteredData}
-          
+          onRowClick={(row) => setDetailMeal(row as MealCalculation)}
           emptyMessage={t('meals.noRecordsFound', 'Henüz yemek hesabı kaydı bulunmuyor.')}
         />
       </div>
@@ -307,6 +320,14 @@ export function MealsPage() {
         onClose={() => setExcursionMeal(null)}
         meal={excursionMeal}
         onSuccess={loadData}
+      />
+
+      <MealDetailModal
+        isOpen={!!detailMeal}
+        onClose={() => setDetailMeal(null)}
+        meal={detailMeal}
+        onPrint={(m) => setPrintMeal(m)}
+        onEditExcursion={(m) => setExcursionMeal(m)}
       />
 
       <Dialog
