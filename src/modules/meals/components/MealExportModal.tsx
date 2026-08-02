@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Modal } from '../../../core/components/Modal/Modal';
-import { exportMealToExcel, type MealExportTemplate } from '../../../core/utils/mealExcelExport';
+import { exportMealToExcel, exportBatchMealsToExcel, type MealExportTemplate } from '../../../core/utils/mealExcelExport';
 import type { MealCalculation } from '../types';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, Printer, FileText, Calendar, Compass, Building2, Check } from 'lucide-react';
@@ -73,9 +73,7 @@ export function MealExportModal({
     try {
       setIsExportingExcel(true);
       if (meals && meals.length > 0) {
-        for (const m of meals) {
-          await exportMealToExcel(m, selectedTemplate);
-        }
+        await exportBatchMealsToExcel(meals, selectedTemplate);
       } else if (activeMeal) {
         await exportMealToExcel(activeMeal, selectedTemplate);
       }

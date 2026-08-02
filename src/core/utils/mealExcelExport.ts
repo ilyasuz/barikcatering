@@ -504,3 +504,239 @@ export async function exportMealToExcel(
   anchor.click();
   window.URL.revokeObjectURL(url);
 }
+
+export async function exportBatchMealsToExcel(
+  meals: MealCalculation[],
+  template: MealExportTemplate = 'standard',
+  fileName: string = 'Toplu_Yemek_Hesaplari_Raporu.xlsx'
+) {
+  if (!meals || meals.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Toplu Yemek Hesapları');
+
+  worksheet.pageSetup.orientation = 'landscape';
+  worksheet.pageSetup.fitToPage = true;
+  worksheet.pageSetup.fitToWidth = 1;
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('tr-TR');
+  };
+
+  const headerBgColor = '1F2937';
+  const headerTextColor = 'FFFFFF';
+  const subHeaderBgColor = '374151';
+  const accentRedBg = 'FEF2F2';
+  const accentRedText = 'DC2626';
+  const zebraBg = 'F9FAFB';
+
+  const defaultBorder: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin', color: { argb: 'D1D5DB' } },
+    left: { style: 'thin', color: { argb: 'D1D5DB' } },
+    bottom: { style: 'thin', color: { argb: 'D1D5DB' } },
+    right: { style: 'thin', color: { argb: 'D1D5DB' } }
+  };
+
+  // Header Title
+  worksheet.mergeCells('A1:N1');
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = 'OSMANLI MUTFAĞI UMRE ACENTA GİRİŞ-ÇIKIŞ HESAP TABLOSU (TOPLU DÖKÜM)';
+  titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: '1E3A8A' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  worksheet.mergeCells('A2:N2');
+  const titleArCell = worksheet.getCell('A2');
+  titleArCell.value = 'المطبخ العثماني - حاسبة وجبات وجداول دخول وخروج مجموعات العمرة (كشف جماعي)';
+  titleArCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: '1E3A8A' } };
+  titleArCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // Turkish Header (Row 4)
+  const headerTr = worksheet.getRow(4);
+  const trTitles = [
+    'ŞİRKET ADI', 'OTEL ADI', 'GİRİŞ TARİHİ', 'SABAH', 'AKŞAM',
+    'ÇIKIŞ TARİHİ', 'SABAH', 'AKŞAM', 'KİŞİ SAYISI', 'BRÜT GÜN',
+    'GEZİ DÜŞÜŞÜ', 'SABAH FİYAT', 'AKŞAM FİYAT', 'TOPLAM TUTAR'
+  ];
+  headerTr.values = trTitles;
+  headerTr.font = { name: 'Arial', size: 10, bold: true, color: { argb: headerTextColor } };
+  headerTr.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  headerTr.height = 28;
+
+  trTitles.forEach((_, colIdx) => {
+    const cell = headerTr.getCell(colIdx + 1);
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: colIdx === 10 ? '991B1B' : headerBgColor }
+    };
+    cell.border = defaultBorder;
+  });
+
+  // Arabic Header (Row 5)
+  const headerAr = worksheet.getRow(5);
+  const arTitles = [
+    '(اسم الشركة)', '(اسم الفندق)', '(تاريخ الدخول)', '(صباح)', '(مساء)',
+    '(تاريخ الخروج)', '(صباح)', '(مساء)', '(عدد الأشخاص)', '(عدد الأيام)',
+    '(خصم الرحلة)', '(سعر الصباح)', '(سعر المساء)', '(المبلغ الإجمالي)'
+  ];
+  headerAr.values = arTitles;
+  headerAr.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'E5E7EB' } };
+  headerAr.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  headerAr.height = 24;
+
+  arTitles.forEach((_, colIdx) => {
+    const cell = headerAr.getCell(colIdx + 1);
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: colIdx === 10 ? '7F1D1D' : subHeaderBgColor }
+    };
+    cell.border = defaultBorder;
+  });
+
+  let nextRow = 6;
+  let totalPaxSum = 0;
+  let totalGrossDaysSum = 0;
+  let totalExcursionDaysSum = 0;
+  const totalsByCurrency: Record<string, number> = {};
+
+  meals.forEach((meal, idx) => {
+    const excursions = getExcursionsFromMeal(meal);
+    const totalExcursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
+    const grossDays = meal.total_days + totalExcursionDays;
+
+    totalPaxSum += meal.pax_count;
+    totalGrossDaysSum += grossDays;
+    totalExcursionDaysSum += totalExcursionDays;
+
+    if (!totalsByCurrency[meal.currency]) totalsByCurrency[meal.currency] = 0;
+    totalsByCurrency[meal.currency] += meal.total_amount;
+
+    const row = worksheet.getRow(nextRow);
+    row.values = [
+      meal.company_name || 'Bilinmiyor',
+      meal.hotel_name,
+      formatDate(meal.entry_date),
+      meal.entry_morning > 0 ? 0.5 : '-',
+      meal.entry_evening > 0 ? 0.5 : '-',
+      formatDate(meal.exit_date),
+      meal.exit_morning > 0 ? 0.5 : '-',
+      meal.exit_evening > 0 ? 0.5 : '-',
+      meal.pax_count,
+      grossDays,
+      totalExcursionDays > 0 ? totalExcursionDays : '-',
+      meal.morning_price,
+      meal.evening_price,
+      meal.total_amount
+    ];
+    row.height = 26;
+    row.font = { name: 'Arial', size: 10 };
+    row.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    for (let i = 1; i <= 14; i++) {
+      const cell = row.getCell(i);
+      cell.border = defaultBorder;
+      if (idx % 2 === 1) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } };
+      }
+      if (i === 12 || i === 13 || i === 14) {
+        cell.numFmt = `#,##0.00 "${meal.currency}"`;
+      }
+      if (i === 11 && totalExcursionDays > 0) {
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: accentRedText } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accentRedBg } };
+      }
+    }
+    nextRow++;
+  });
+
+  // Grand Total Summary Row
+  const totalSummaryText = Object.entries(totalsByCurrency)
+    .map(([curr, amt]) => `${amt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${curr}`)
+    .join(' | ');
+
+  const totRow = worksheet.getRow(nextRow);
+  totRow.values = [
+    'GENEL TOPLAM / الإجمالي',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    totalPaxSum,
+    totalGrossDaysSum,
+    totalExcursionDaysSum > 0 ? totalExcursionDaysSum : '-',
+    '',
+    '',
+    totalSummaryText
+  ];
+  totRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: headerTextColor } };
+  totRow.alignment = { horizontal: 'center', vertical: 'middle' };
+  totRow.height = 30;
+
+  for (let i = 1; i <= 14; i++) {
+    const cell = totRow.getCell(i);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBgColor } };
+    cell.border = defaultBorder;
+  }
+
+  if (template === 'corporate') {
+    nextRow += 2;
+    worksheet.mergeCells(`A${nextRow}:F${nextRow}`);
+    const signLeftHeader = worksheet.getCell(`A${nextRow}`);
+    signLeftHeader.value = 'HAZIRLAYAN / TESLİM EDEN (إعداد وتكليف الخدمة)';
+    signLeftHeader.font = { name: 'Arial', size: 11, bold: true, color: { argb: headerBgColor } };
+    signLeftHeader.alignment = { horizontal: 'center' };
+
+    worksheet.mergeCells(`I${nextRow}:N${nextRow}`);
+    const signRightHeader = worksheet.getCell(`I${nextRow}`);
+    signRightHeader.value = 'KONTROL EDEN / ACENTA ONAYI (مراجعة واعتماد الوكالة)';
+    signRightHeader.font = { name: 'Arial', size: 11, bold: true, color: { argb: headerBgColor } };
+    signRightHeader.alignment = { horizontal: 'center' };
+    nextRow++;
+
+    for (let r = 0; r < 4; r++) {
+      worksheet.mergeCells(`A${nextRow}:F${nextRow}`);
+      worksheet.mergeCells(`I${nextRow}:N${nextRow}`);
+      const cLeft = worksheet.getCell(`A${nextRow}`);
+      const cRight = worksheet.getCell(`I${nextRow}`);
+      cLeft.border = defaultBorder;
+      cRight.border = defaultBorder;
+      if (r === 3) {
+        cLeft.value = 'İmza & Kaşe (التوقيع والختم)';
+        cRight.value = 'İmza & Kaşe (التوقيع والختم)';
+        cLeft.font = { name: 'Arial', size: 9, italic: true, color: { argb: '6B7280' } };
+        cRight.font = { name: 'Arial', size: 9, italic: true, color: { argb: '6B7280' } };
+        cLeft.alignment = { horizontal: 'center', vertical: 'bottom' };
+        cRight.alignment = { horizontal: 'center', vertical: 'bottom' };
+      }
+      nextRow++;
+    }
+  }
+
+  worksheet.columns.forEach((column) => {
+    let maxLength = 12;
+    column.eachCell?.({ includeEmpty: true }, (cell) => {
+      const columnLength = cell.value ? String(cell.value).length : 10;
+      if (columnLength > maxLength) {
+        maxLength = columnLength;
+      }
+    });
+    column.width = Math.min(maxLength + 4, 32);
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  window.URL.revokeObjectURL(url);
+}
