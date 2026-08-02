@@ -18,6 +18,11 @@ interface MealDrawerProps {
 export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDrawerProps) {
   const { t } = useTranslation();
   const { rates } = useExchangeRates();
+  const [customRate, setCustomRate] = useState<number>(0);
+  const [companies, setCompanies] = useState<{ id: string, name: string, region: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [isVariablePax, setIsVariablePax] = useState(false);
   const [dailyPaxList, setDailyPaxList] = useState<{ date: string; pax: number }[]>([]);
   const [bulkPaxVal, setBulkPaxVal] = useState<number>(50);
