@@ -317,6 +317,25 @@ export function CompanyDetailPage() {
       return { ...tx, currentRunBal: printRunBal };
     });
 
+    // Overall totals across ALL time
+    const allMonthsSet = new Set(currentExpenses.map(e => {
+      const d = new Date(e.date);
+      return `${d.getFullYear()}-${d.getMonth()}`;
+    }));
+    const totalActiveMonths = Math.max(allMonthsSet.size, 1);
+
+    const overallAdvances = currentExpenses
+      .filter(e => isAdvanceOrTediye(e.category, e.description))
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    const overallSalaryAccrual = (record.type === 'Personel' && record.monthlySalary)
+      ? (totalActiveMonths * record.monthlySalary)
+      : expAccruals;
+
+    const overallNetBalance = (record.type === 'Personel' && record.monthlySalary)
+      ? (overallAdvances - overallSalaryAccrual)
+      : currentBalance;
+
     return {
       allTx,
       totalAmount,
@@ -328,7 +347,10 @@ export function CompanyDetailPage() {
       remainingSalaryThisMonth,
       printData,
       printInitialBal: priorMonthTxEffect,
-      selectedMonthEndBalance: printRunBal
+      selectedMonthEndBalance: printRunBal,
+      overallSalaryAccrual,
+      overallAdvances,
+      overallNetBalance
     };
   };
 
@@ -565,23 +587,31 @@ export function CompanyDetailPage() {
               </>
             )}
             
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '20px', borderLeft: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                {record.type === 'Personel' && selectedMonth !== 'all' ? t('companies.monthEndBalance', 'Ay Sonu Net Bakiye') : t('companies.generalBalance', 'Genel Bakiye')}
-              </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: (record.type === 'Personel' ? l.data.selectedMonthEndBalance > 0 : l.data.isOweUs) ? '#EF4444' : (record.type === 'Personel' ? l.data.selectedMonthEndBalance < 0 : l.data.isWeOwe) ? '#10B981' : 'var(--text-primary)' }}>
-                <CurrencyDisplay amount={record.type === 'Personel' ? Math.abs(l.data.selectedMonthEndBalance) : l.data.remaining} currency={l.currency} />
-              </div>
-              {record.type === 'Personel' && (
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  {l.data.selectedMonthEndBalance < 0
-                    ? `(${t('companies.remainingSalary', 'Kalan Maaş')})`
-                    : l.data.selectedMonthEndBalance > 0
-                    ? `(${t('companies.excessAdvance', 'Fazla Avans')})`
-                    : `(${t('companies.salaryCompleted', 'Maaş Tamamlandı')})`}
+            {(() => {
+              const activeNetBal = record.type === 'Personel' 
+                ? (selectedMonth === 'all' ? l.data.overallNetBalance : l.data.selectedMonthEndBalance)
+                : (l.data.isOweUs ? l.data.remaining : l.data.isWeOwe ? -l.data.remaining : 0);
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '20px', borderLeft: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                    {record.type === 'Personel' && selectedMonth !== 'all' ? t('companies.monthEndBalance', 'Ay Sonu Net Bakiye') : t('companies.generalBalance', 'Genel Bakiye')}
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: activeNetBal > 0 ? '#EF4444' : activeNetBal < 0 ? '#10B981' : 'var(--text-primary)' }}>
+                    <CurrencyDisplay amount={Math.abs(activeNetBal)} currency={l.currency} />
+                  </div>
+                  {record.type === 'Personel' && (
+                    <div style={{ fontSize: '10px', color: activeNetBal > 0 ? '#EF4444' : activeNetBal < 0 ? '#10B981' : 'var(--text-muted)', marginTop: '2px' }}>
+                      {activeNetBal < 0
+                        ? `(${t('companies.remainingSalary', 'Kalan Maaş')})`
+                        : activeNetBal > 0
+                        ? `(${t('companies.excessAdvance', 'Fazla Avans')})`
+                        : `(${t('companies.salaryCompleted', 'Maaş Tamamlandı')})`}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
           </div>
         ))}
       </div>
@@ -820,6 +850,72 @@ export function CompanyDetailPage() {
                     });
                   })()}
                 </tbody>
+                <tfoot style={{ borderTop: '2px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontWeight: 600 }}>
+                  {ledgersToDisplay.map(l => {
+                    const isAll = selectedMonth === 'all';
+                    const netBal = isAll ? l.data.overallNetBalance : l.data.selectedMonthEndBalance;
+                    const salaryAccrual = isAll ? l.data.overallSalaryAccrual : (record.type === 'Personel' ? (record.monthlySalary || 0) : l.data.totalAmount);
+                    const advancesPaid = isAll ? l.data.overallAdvances : (record.type === 'Personel' ? l.data.currentMonthAdvances : l.data.totalPaid);
+
+                    return (
+                      <tr key={`tfoot-${l.currency}`}>
+                        <td colSpan={2} style={{ padding: '14px 24px' }}>
+                          <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
+                            {isAll ? t('companies.overallSummary', 'TÜM ZAMANLAR GENEL TOPLAMI') : t('companies.selectedMonthSummary', 'SEÇİLİ AY TOPLAMI')}
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 24px', textAlign: 'right' }}>
+                          {record.type === 'Personel' ? (
+                            <>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                <CurrencyDisplay amount={salaryAccrual} currency={l.currency} />
+                              </div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 400 }}>({t('companies.totalSalaryRight', 'Maaş Hak Edişi')})</div>
+                            </>
+                          ) : (
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                              <CurrencyDisplay amount={l.data.totalAmount} currency={l.currency} />
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '14px 24px', textAlign: 'right' }}>
+                          {record.type === 'Personel' ? (
+                            <>
+                              <div style={{ fontWeight: 600, color: '#EF4444' }}>
+                                <CurrencyDisplay amount={advancesPaid} currency={l.currency} />
+                              </div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 400 }}>({t('companies.totalAdvancesGiven', 'Ödenen Avans')})</div>
+                            </>
+                          ) : (
+                            <div style={{ fontWeight: 600, color: '#EF4444' }}>
+                              <CurrencyDisplay amount={l.data.totalPaid} currency={l.currency} />
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '14px 24px', textAlign: 'right' }}>
+                          <div style={{ fontWeight: 700, fontSize: '15px', color: netBal > 0 ? '#EF4444' : netBal < 0 ? '#10B981' : 'var(--text-primary)' }}>
+                            <CurrencyDisplay amount={Math.abs(netBal)} currency={l.currency} />
+                          </div>
+                          <div style={{ fontSize: '10px', fontWeight: 500, color: netBal > 0 ? '#EF4444' : netBal < 0 ? '#10B981' : 'var(--text-muted)', marginTop: '2px' }}>
+                            {record.type === 'Personel' ? (
+                              netBal < 0
+                                ? `(${t('companies.remainingSalary', 'Kalan Maaş')})`
+                                : netBal > 0
+                                ? `(${t('companies.excessAdvance', 'Fazla Avans')})`
+                                : `(${t('companies.salaryCompleted', 'Maaşlar Tamamlandı')})`
+                            ) : (
+                              netBal > 0 
+                                ? `(${t('companies.weAreCreditor', 'Biz Alacaklıyız')})` 
+                                : netBal < 0 
+                                ? `(${t('companies.theyAreCreditor', 'Karşı Taraf Alacaklı')})`
+                                : `(${t('companies.balanceClosed', 'Bakiye Kapalı')})`
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tfoot>
               </table>
             )}
           </div>
