@@ -184,7 +184,7 @@ export function MealsPage() {
             className="btn-text"
             style={{ padding: '6px', color: 'var(--text-primary)', backgroundColor: 'var(--bg-secondary)' }}
             title={t('common.viewDetails', 'Detay Gör')}
-            onClick={() => setDetailMeal(row)}
+            onClick={(e) => { e.stopPropagation(); setDetailMeal(row); }}
           >
             <Eye size={16} />
           </button>
@@ -193,7 +193,7 @@ export function MealsPage() {
               className="btn-text"
               style={{ padding: '6px', color: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
               title={t('meals.addExcursionTooltip', 'Gezi Ekle / Düşüş Yap')}
-              onClick={() => setExcursionMeal(row)}
+              onClick={(e) => { e.stopPropagation(); setExcursionMeal(row); }}
             >
               <Compass size={16} />
             </button>
@@ -202,7 +202,7 @@ export function MealsPage() {
             className="btn-text"
             style={{ padding: '6px', color: 'var(--accent)', backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
             title={t('meals.printInvoiceTooltip', 'Yazdır / Fatura')}
-            onClick={() => setPrintMeal(row)}
+            onClick={(e) => { e.stopPropagation(); setPrintMeal(row); }}
           >
             <Printer size={16} />
           </button>
@@ -211,7 +211,7 @@ export function MealsPage() {
               className="btn-text"
               style={{ padding: '6px', color: 'var(--error)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
               title={t('common.delete', 'Sil')}
-              onClick={() => setDeleteId(row.id)}
+              onClick={(e) => { e.stopPropagation(); setDeleteId(row.id); }}
             >
               <Trash2 size={16} />
             </button>
