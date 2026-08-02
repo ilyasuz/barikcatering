@@ -35,8 +35,19 @@ export function MealsPage() {
   
   const [companies, setCompanies] = useState<{ id: string, name: string }[]>([]);
   const [companyFilter, setCompanyFilter] = useState('');
+  const [hotelFilter, setHotelFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  const uniqueHotels = useMemo(() => {
+    const set = new Set<string>();
+    data.forEach(item => {
+      if (item.hotel_name && item.hotel_name.trim()) {
+        set.add(item.hotel_name.trim());
+      }
+    });
+    return Array.from(set).sort();
+  }, [data]);
 
   const [printMeal, setPrintMeal] = useState<MealCalculation | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -77,9 +88,10 @@ export function MealsPage() {
     if (!deleteId) return;
     try {
       await mealApi.delete(deleteId);
-      await loadData();
-    } catch (error) {
+      loadData();
+    } catch (error: any) {
       console.error('Error deleting meal calculation:', error);
+      alert(error.message || t('common.error', 'Bir hata oluştu'));
     } finally {
       setDeleteId(null);
     }
@@ -116,12 +128,12 @@ export function MealsPage() {
   };
 
   const columns = [
-    { key: 'tarih', header: t('common.date', 'Tarih'), width: '12%', render: (row: MealCalculation) => formatDate(row.created_at || row.entry_date) },
+    { key: 'tarih', header: t('common.date', 'Tarih'), width: '11%', render: (row: MealCalculation) => formatDate(row.created_at || row.entry_date) },
     { key: 'sirket', header: t('meals.company', 'Şirket'), width: '15%', render: (row: MealCalculation) => row.company_name || '-' },
     { key: 'otel', header: t('meals.hotel', 'Otel'), width: '15%', render: (row: MealCalculation) => row.hotel_name },
-    { key: 'giris', header: t('meals.checkIn', 'Giriş'), width: '12%', render: (row: MealCalculation) => formatDate(row.entry_date) },
-    { key: 'cikis', header: t('meals.checkOut', 'Çıkış'), width: '12%', render: (row: MealCalculation) => formatDate(row.exit_date) },
-    { key: 'kisi', header: t('meals.pax', 'Kişi'), width: '8%', render: (row: MealCalculation) => row.pax_count },
+    { key: 'giris', header: t('meals.checkIn', 'Giriş'), width: '11%', render: (row: MealCalculation) => formatDate(row.entry_date) },
+    { key: 'cikis', header: t('meals.checkOut', 'Çıkış'), width: '11%', render: (row: MealCalculation) => formatDate(row.exit_date) },
+    { key: 'kisi', header: t('meals.pax', 'Kişi'), width: '7%', render: (row: MealCalculation) => row.pax_count },
     { 
       key: 'gun', 
       header: t('meals.days', 'Gün'), 
@@ -216,6 +228,10 @@ export function MealsPage() {
       result = result.filter(item => item.company_id === companyFilter);
     }
 
+    if (hotelFilter) {
+      result = result.filter(item => item.hotel_name.trim() === hotelFilter);
+    }
+
     if (startDate) {
       result = result.filter(item => item.entry_date >= startDate);
     }
@@ -233,7 +249,7 @@ export function MealsPage() {
     }
     
     return result;
-  }, [data, searchTerm, companyFilter, startDate, endDate]);
+  }, [data, searchTerm, companyFilter, hotelFilter, startDate, endDate]);
 
   return (
     <div className="page-container">
@@ -262,12 +278,20 @@ export function MealsPage() {
         <FilterBar
           onSearch={setSearchTerm}
         >
-          <div style={{ width: '220px' }}>
+          <div style={{ width: '180px' }}>
             <SearchableSelect
               options={[{ value: '', label: t('meals.allCompanies', 'Tüm Şirketler') }, ...companies.map(c => ({ value: c.id, label: c.name }))]}
               value={companyFilter}
               onChange={val => setCompanyFilter(val as string)}
               placeholder={t('meals.allCompanies', 'Tüm Şirketler')}
+            />
+          </div>
+          <div style={{ width: '180px' }}>
+            <SearchableSelect
+              options={[{ value: '', label: t('meals.allHotels', 'Tüm Oteller') }, ...uniqueHotels.map(h => ({ value: h, label: h }))]}
+              value={hotelFilter}
+              onChange={val => setHotelFilter(val as string)}
+              placeholder={t('meals.allHotels', 'Tüm Oteller')}
             />
           </div>
           <input 

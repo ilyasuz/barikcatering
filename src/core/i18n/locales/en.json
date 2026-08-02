@@ -797,7 +797,8 @@
     "errorLoading": "Veriler yüklenirken hata oluştu:",
     "invoicePreview": "Fatura / Çıktı Önizleme",
     "batchPrintPreview": "Toplu Yazdır / Çıktı Önizleme",
-    "batchPrintInvoice": "Toplu Fatura Yazdır"
+    "batchPrintInvoice": "Toplu Fatura Yazdır",
+    "allHotels": "All Hotels"
   },
   "files": {
     "title": "Files & Archive",
