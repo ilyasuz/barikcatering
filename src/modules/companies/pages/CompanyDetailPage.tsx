@@ -260,7 +260,7 @@ export function CompanyDetailPage() {
     const initialBaseBal = (record.type === 'Personel' && record.monthlySalary && expAccruals === 0) ? -record.monthlySalary : 0;
     let printRunBal = initialBaseBal;
     let printFilteredTx = allTx;
-    let printInitialBal = initialBaseBal;
+    let priorMonthTxEffect = 0;
     
     if (selectedMonth !== 'all') {
       const [yearStr, monthStr] = selectedMonth.split('-');
@@ -272,11 +272,11 @@ export function CompanyDetailPage() {
         const y = d.getFullYear();
         const m = d.getMonth();
         if (y < targetYear || (y === targetYear && m < targetMonth)) {
-          printInitialBal += tx.effect;
+          priorMonthTxEffect += tx.effect;
         }
       });
       
-      printRunBal = printInitialBal;
+      printRunBal = initialBaseBal + priorMonthTxEffect;
       printFilteredTx = allTx.filter(tx => {
         const d = new Date(tx.date);
         return d.getFullYear() === targetYear && d.getMonth() === targetMonth;
@@ -299,7 +299,7 @@ export function CompanyDetailPage() {
       currentMonthAdvances,
       remainingSalaryThisMonth,
       printData,
-      printInitialBal
+      printInitialBal: priorMonthTxEffect
     };
   };
 
@@ -317,7 +317,7 @@ export function CompanyDetailPage() {
         initialBalanceRows.push({
           id: `initial-bal-${l.currency}`,
           date: '-',
-          description: `${l.currency} ${t('companies.transferredBalance', 'Devreden Bakiye')}`,
+          description: `${l.currency} ${t('companies.transferredBalance', 'Geçmişten Devreden Bakiye')}`,
           effect: l.data.printInitialBal,
           currentRunBal: l.data.printInitialBal,
           currency: l.currency,
