@@ -326,9 +326,11 @@ export function Dashboard() {
   const baseSymbol = baseCurrency === 'USD' ? '$' : baseCurrency === 'EUR' ? '€' : baseCurrency === 'TRY' ? '₺' : 'SAR ';
 
   const getEqStr = (amount: number, curr: string) => {
-    if (amount === 0) return undefined;
-    const eq = calculateTotalBase([{ amount, currency: curr }], stats.displayCurrency, rates, false);
-    return `≈ ${stats.displaySymbol}${eq.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (!amount || amount === 0) return undefined;
+    const targetCurr = curr === 'USD' ? (region === 'Arabistan' ? 'SAR' : 'TRY') : 'USD';
+    const targetSym = getDisplaySymbol(targetCurr);
+    const eq = calculateTotalBase([{ amount, currency: curr }], targetCurr, rates, false);
+    return `≈ ${targetSym}${eq.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -379,6 +381,7 @@ export function Dashboard() {
                 title={t('dashboard.sarIncome', 'Riyal Gelirleri (SAR)')} 
                 value={`${stats.breakdown.income.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
                 className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.income.SAR, 'SAR')}
                 trend={stats.trends.income.SAR}
               />
               <KPICard 
@@ -417,6 +420,7 @@ export function Dashboard() {
                 title={t('dashboard.sarExpense', 'Riyal Giderleri (SAR)')} 
                 value={`${stats.breakdown.expense.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
                 className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.expense.SAR, 'SAR')}
                 trend={stats.trends.expense.SAR}
               />
               <KPICard 
@@ -454,6 +458,7 @@ export function Dashboard() {
                 title={t('dashboard.sarNet', 'SAR Net Durum')} 
                 value={`${stats.breakdown.net.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
                 className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.net.SAR, 'SAR')}
               />
               <KPICard 
                 title={t('dashboard.tryNet', 'TL Net Durum')} 
@@ -494,6 +499,7 @@ export function Dashboard() {
                 title={t('dashboard.sarBalance', 'SAR Bakiye')} 
                 value={`${stats.breakdown.accounts.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
                 className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.accounts.SAR, 'SAR')}
               />
               <KPICard 
                 title={t('dashboard.tryBalance', 'TL Bakiye')} 

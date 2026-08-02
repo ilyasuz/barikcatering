@@ -49,9 +49,11 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
   const totalOverdueVal = isAllRegions ? overdueInvoicesBase : overdueInvoices;
 
   const getEqStr = (amount: number, curr: string) => {
-    if (amount === 0) return undefined;
-    const eq = calculateTotalBase([{ amount, currency: curr }], displayCurrency, rates, false);
-    return `≈ ${displaySymbol}${eq.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (!amount || amount === 0) return undefined;
+    const targetCurr = curr === 'USD' ? (region === 'Arabistan' ? 'SAR' : 'TRY') : 'USD';
+    const targetSym = getDisplaySymbol(targetCurr);
+    const eq = calculateTotalBase([{ amount, currency: curr }], targetCurr, rates, false);
+    return `≈ ${targetSym}${eq.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const incomeBreakdown = { USD: 0, SAR: 0, TRY: 0, EUR: 0 };
@@ -127,6 +129,7 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
               title={t('income.sarRevenues', 'Riyal Gelirleri (SAR)')}
               value={`${incomeBreakdown.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
               className="small-kpi"
+              equivalentStr={getEqStr(incomeBreakdown.SAR, 'SAR')}
               trend={calculateTrend(currentMonthBreakdown.SAR, lastMonthBreakdown.SAR)}
             />
           </div>
@@ -171,6 +174,7 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
               title={t('income.sarPending', 'Riyal Bekleyen (SAR)')}
               value={`${pendingBreakdown.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
               className="small-kpi"
+              equivalentStr={getEqStr(pendingBreakdown.SAR, 'SAR')}
             />
           </div>
           <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('pending', 'TRY'); }}>
@@ -212,6 +216,7 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
               title={t('income.sarOverdue', 'Riyal Geciken (SAR)')}
               value={`${overdueBreakdown.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
               className="small-kpi"
+              equivalentStr={getEqStr(overdueBreakdown.SAR, 'SAR')}
             />
           </div>
           <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('overdue', 'TRY'); }}>
