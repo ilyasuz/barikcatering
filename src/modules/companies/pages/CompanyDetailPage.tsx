@@ -230,10 +230,13 @@ export function CompanyDetailPage() {
     const debtToUs = isMusteri
       ? currentIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
       : currentExpenses.filter(e => isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0) + currentExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + (e.paidAmount || 0), 0);
-      
+
+    const expAccruals = currentExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0);
+    const personnelBaseAccrual = (record.type === 'Personel' && record.monthlySalary && expAccruals === 0) ? record.monthlySalary : 0;
+
     const debtToThem = isMusteri
       ? currentIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + (i.paidAmount || 0), 0) + currentIncomes.filter(i => i.category === 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
-      : currentExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0);
+      : expAccruals + personnelBaseAccrual;
       
     const currentBalance = debtToUs - debtToThem;
     const isOweUs = currentBalance > 0;

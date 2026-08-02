@@ -61,9 +61,12 @@ export function CompaniesPage() {
         ? cIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
         : cExpenses.filter(e => isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0) + cExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + (e.paidAmount || 0), 0);
         
+      const expAccruals = cExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0);
+      const personnelBaseAccrual = (c.type === 'Personel' && c.monthlySalary && expAccruals === 0) ? c.monthlySalary : 0;
+
       const debtToThem = isMusteri
         ? cIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + (i.paidAmount || 0), 0) + cIncomes.filter(i => i.category === 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
-        : cExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0);
+        : expAccruals + personnelBaseAccrual;
         
       const activeCurrency = cIncomes.length > 0 ? cIncomes[0].currency 
                            : cExpenses.length > 0 ? cExpenses[0].currency 
