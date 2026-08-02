@@ -13,7 +13,7 @@ export const mealApi = {
       `)
       .order('created_at', { ascending: false });
 
-    if (region) {
+    if (region && region !== 'all') {
       query = query.eq('region', region);
     }
 

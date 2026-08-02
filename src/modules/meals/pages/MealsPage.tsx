@@ -62,7 +62,7 @@ export function MealsPage() {
       .select('id, name, region')
       .order('name');
     if (data) {
-      setCompanies(data.filter(c => !region || c.region === region));
+      setCompanies(data.filter(c => !region || region === 'all' || c.region === region));
     }
   };
 
