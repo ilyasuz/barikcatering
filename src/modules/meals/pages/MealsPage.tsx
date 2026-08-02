@@ -237,20 +237,20 @@ export function MealsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h1 className="page-title">{t('meals.title', 'Yemek Hesapları')}</h1>
-          <p className="page-subtitle">{t('meals.subtitle', 'Umre acenta giriş-çıkış yemek hesabı takibi ve faturalandırma')}</p>
+          <h1 className="page-title" style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>{t('meals.title', 'Yemek Hesapları')}</h1>
+          <p className="page-subtitle" style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>{t('meals.subtitle', 'Umre acenta giriş-çıkış yemek hesabı takibi ve faturalandırma')}</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           {filteredData.length > 0 && (
-            <button className="btn-secondary" onClick={() => setShowBatchPrint(true)}>
+            <button className="btn-secondary" onClick={() => setShowBatchPrint(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Printer size={18} />
               <span>{t('meals.batchPrint', 'Toplu Yazdır')} ({filteredData.length})</span>
             </button>
           )}
           {(user?.role === 'admin' || user?.role === 'editor') && (
-            <button className="btn-primary" onClick={() => setIsDrawerOpen(true)}>
+            <button className="btn-primary" onClick={() => setIsDrawerOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Plus size={18} />
               <span>{t('meals.newCalculation', 'Yeni Yemek Hesabı')}</span>
             </button>
@@ -258,9 +258,11 @@ export function MealsPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
+      <div style={{ marginBottom: '20px' }}>
+        <FilterBar
+          onSearch={setSearchTerm}
+        >
+          <div style={{ width: '220px' }}>
             <SearchableSelect
               options={[{ value: '', label: t('meals.allCompanies', 'Tüm Şirketler') }, ...companies.map(c => ({ value: c.id, label: c.name }))]}
               value={companyFilter}
@@ -268,30 +270,24 @@ export function MealsPage() {
               placeholder={t('meals.allCompanies', 'Tüm Şirketler')}
             />
           </div>
-          <FilterBar
-            onSearchChange={setSearchTerm}
-            searchValue={searchTerm}
-            placeholder={t('meals.searchPlaceholder', 'Otel adı veya şirket ara...')}
-          >
-            <input 
-              type="date" 
-              className="form-control" 
-              style={{ width: '130px', fontSize: '13px', padding: '6px' }}
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              title={t('meals.startDate', 'Başlangıç Tarihi')}
-            />
-            <span style={{ color: 'var(--text-muted)' }}>-</span>
-            <input 
-              type="date" 
-              className="form-control" 
-              style={{ width: '130px', fontSize: '13px', padding: '6px' }}
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              title={t('meals.endDate', 'Bitiş Tarihi')}
-            />
-          </FilterBar>
-        </div>
+          <input 
+            type="date" 
+            className="form-control" 
+            style={{ width: '135px', fontSize: '13px', padding: '6px 8px' }}
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            title={t('meals.startDate', 'Başlangıç Tarihi')}
+          />
+          <span style={{ color: 'var(--text-muted)' }}>-</span>
+          <input 
+            type="date" 
+            className="form-control" 
+            style={{ width: '135px', fontSize: '13px', padding: '6px 8px' }}
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            title={t('meals.endDate', 'Bitiş Tarihi')}
+          />
+        </FilterBar>
       </div>
 
       <div className="page-content">
