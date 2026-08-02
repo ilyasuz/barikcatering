@@ -19,6 +19,21 @@ import { OfficialPrintDocument } from '../../../core/components/Print/OfficialPr
 import { PrintPreviewModal } from '../../../core/components/Print/PrintPreviewModal';
 import { SearchableSelect } from '../../../core/components/Form/SearchableSelect';
 
+const isAdvanceOrTediye = (category?: string, description?: string) => {
+  const cat = (category || '').toLowerCase();
+  const desc = (description || '').toLowerCase();
+  return (
+    cat.includes('tediye') ||
+    cat.includes('avans') ||
+    cat.includes('personel') ||
+    cat.includes('advance') ||
+    cat.includes('سلفة') ||
+    desc.includes('avans') ||
+    desc.includes('advance') ||
+    desc.includes('سلفة')
+  );
+};
+
 export function CompanyDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -211,21 +226,6 @@ export function CompanyDetailPage() {
       
       return 0;
     });
-
-    const isAdvanceOrTediye = (category?: string, description?: string) => {
-      const cat = (category || '').toLowerCase();
-      const desc = (description || '').toLowerCase();
-      return (
-        cat.includes('tediye') ||
-        cat.includes('avans') ||
-        cat.includes('personel') ||
-        cat.includes('advance') ||
-        cat.includes('سلفة') ||
-        desc.includes('avans') ||
-        desc.includes('advance') ||
-        desc.includes('سلفة')
-      );
-    };
     
     const debtToUs = isMusteri
       ? currentIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
