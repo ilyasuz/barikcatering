@@ -75,13 +75,13 @@ export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelN
       setLoading(true);
       // Determine USD rate
       let usdRate = 1;
-      const { data: sData } = await supabase.from('settings').select('usd_rate, usd_rate_sar').single();
+      const { data: sData } = await supabase.from('settings').select('usd_rate, usd_rate_sar').maybeSingle();
       if (sData) {
         if (selectedCurrency === 'TRY') usdRate = sData.usd_rate || 1;
         else if (selectedCurrency === 'SAR') usdRate = sData.usd_rate_sar || 1;
       }
 
-      await expensesApi.create({
+      const createdRes = await expensesApi.create({
         companyId: personelId,
         supplierName: personelName,
         payee: personelName,
@@ -93,7 +93,7 @@ export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelN
         dueDate: date,
         status: 'completed',
         paymentMethod: paymentMethod,
-        accountId: accountId,
+        accountId: accountId || undefined,
         description: description,
         region: region === 'all' ? (personelRegion || 'Türkiye') : region,
         usd_rate: usdRate,
@@ -106,6 +106,10 @@ export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelN
           notes: description
         }]
       });
+
+      if (!createdRes) {
+        throw new Error('Veritabanına kaydedilemedi.');
+      }
 
       onSuccess();
       onClose();
