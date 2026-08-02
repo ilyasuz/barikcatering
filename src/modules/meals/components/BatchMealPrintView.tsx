@@ -2,7 +2,6 @@ import { forwardRef } from 'react';
 import type { MealCalculation } from '../types';
 import { getExcursionsFromMeal } from '../types';
 import type { MealExportTemplate } from '../../../core/utils/mealExcelExport';
-import { MealTemplatePrintView } from './MealTemplatePrintView';
 import { useTranslation } from 'react-i18next';
 
 interface BatchMealPrintViewProps {
@@ -15,23 +14,11 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
     const { t } = useTranslation();
 
     const formatDate = (dateString?: string) => {
-      if (!dateString) return '';
+      if (!dateString) return '-';
       return new Date(dateString).toLocaleDateString('tr-TR');
     };
 
-    if (template === 'daily' || template === 'excursion') {
-      return (
-        <div ref={ref} className="bg-white text-black p-4" style={{ width: '100%', minHeight: '100vh', color: '#000', backgroundColor: '#fff' }}>
-          {meals.map((meal, index) => (
-            <div key={meal.id || index} style={{ pageBreakAfter: index < meals.length - 1 ? 'always' : 'auto', marginBottom: '32px' }}>
-              <MealTemplatePrintView meal={meal} template={template} />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // Consolidated Table for Standard and Corporate Templates
+    // Calculate Grand Totals across all meals in batch
     let grandPaxSum = 0;
     let grandGrossDaysSum = 0;
     let grandExcursionDaysSum = 0;
@@ -51,129 +38,386 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
     });
 
     return (
-      <div ref={ref} className="bg-white text-black p-8" style={{ width: '100%', minHeight: '100vh', direction: 'ltr', color: '#000', backgroundColor: '#fff', fontFamily: 'Arial, sans-serif' }}>
-        
-        {/* Header Title */}
+      <div
+        ref={ref}
+        className="bg-white text-black p-6"
+        style={{
+          width: '100%',
+          direction: 'ltr',
+          color: '#000',
+          backgroundColor: '#fff',
+          fontFamily: 'Arial, sans-serif'
+        }}
+      >
+        {/* Document Title Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px', borderBottom: '2px solid black', paddingBottom: '16px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>
             {t('meals.batchPrintTitle', 'OSMANLI MUTFAĞI UMRE ACENTA GİRİŞ-ÇIKIŞ HESAP TABLOSU (TOPLU DÖKÜM)')}
           </h1>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '6px', margin: 0 }} dir="rtl">
-            المطبخ العثماني - حاسبة وجبات وجداول دخول وخروج مجموعات العمرة (كشف جماعي)
+          <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '6px', margin: 0 }} dir="rtl">
+            المطبخ العثماني - حاسبة وجبات وجداول دخول وخروج مجموعات العمرة (كشف جماعي - {meals.length} مجموعات)
           </h2>
-          {template === 'corporate' && (
-            <div style={{ fontSize: '13px', fontWeight: 'bold', marginTop: '8px', color: '#1E3A8A' }}>
-              RESMİ HAKEDİŞ VE MUTABAKAT BELGESİ (وثيقة الاعتماد والمطابقة الرسمية)
-            </div>
-          )}
+          <div style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '6px', color: '#4B5563' }}>
+            {template === 'standard' && 'STANDART ÖZET TOPLU DÖKÜM TABLOSU (جدول الملخص الجماعي)'}
+            {template === 'daily' && 'GÜNLÜK PAX DETAYLI TOPLU DÖKÜM TABLOSU (الكشف التفصيلي اليومي)'}
+            {template === 'excursion' && 'GEZİ DÜŞÜŞLERİ DETAYLI TOPLU DÖKÜM TABLOSU (تفاصيل خصومات الرحلات الجماعية)'}
+            {template === 'corporate' && 'KURUMSAL RESMİ HAKEDİŞ VE MUTABAKAT BELGESİ (وثيقة الاعتماد والمطابقة الرسمية)'}
+          </div>
         </div>
 
-        {/* Consolidated Data Table */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', textAlign: 'center', fontSize: '12px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold' }}>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.companyName', 'ŞİRKET ADI')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.hotelName', 'OTEL ADI')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.checkInDate', 'GİRİŞ TARİHİ')}</th>
-              <th style={{ border: '1px solid black', padding: '6px', color: '#FCA5A5' }}>{t('meals.morning', 'SABAH')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.evening', 'AKŞAM')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.checkOutDate', 'ÇIKIŞ TARİHİ')}</th>
-              <th style={{ border: '1px solid black', padding: '6px', color: '#FCA5A5' }}>{t('meals.morning', 'SABAH')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.evening', 'AKŞAM')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.paxCount', 'KİŞİ SAYISI')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.dayCount', 'BRÜT GÜN')}</th>
-              <th style={{ border: '1px solid black', padding: '6px', backgroundColor: '#991B1B', color: '#FFFFFF' }}>{t('meals.excursionHeader', 'GEZİ DÜŞÜŞÜ')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.morningPrice', 'SABAH FİYAT')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.eveningPrice', 'AKŞAM FİYAT')}</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.totalAmount', 'TOPLAM TUTAR')}</th>
-            </tr>
-            <tr style={{ backgroundColor: '#374151', color: '#E5E7EB', fontWeight: 'bold' }} dir="rtl">
-              <th style={{ border: '1px solid black', padding: '6px' }}>(اسم الشركة)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(اسم الفندق)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(تاريخ الدخول)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(صباح)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(مساء)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(تاريخ الخروج)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(صباح)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(مساء)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(عدد الأشخاص)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(عدد الأيام)</th>
-              <th style={{ border: '1px solid black', padding: '6px', backgroundColor: '#7F1D1D' }}>(خصم الرحلة)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(سعر الصباح)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(سعر المساء)</th>
-              <th style={{ border: '1px solid black', padding: '6px' }}>(المبلغ الإجمالي)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {meals.map((meal, index) => {
-              const excursions = getExcursionsFromMeal(meal);
-              const excDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
-              const grossDays = meal.total_days + excDays;
+        {/* ------------------------------------------------------------- */}
+        {/* TEMPLATE 1 & TEMPLATE 4: STANDARD & CORPORATE BATCH TABLES */}
+        {/* ------------------------------------------------------------- */}
+        {(template === 'standard' || template === 'corporate') && (
+          <div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', textAlign: 'center', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold' }}>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.companyName', 'ŞİRKET ADI')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.hotelName', 'OTEL ADI')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.checkInDate', 'GİRİŞ TARİHİ')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px', color: '#FCA5A5' }}>{t('meals.morning', 'SABAH')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.evening', 'AKŞAM')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.checkOutDate', 'ÇIKIŞ TARİHİ')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px', color: '#FCA5A5' }}>{t('meals.morning', 'SABAH')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.evening', 'AKŞAM')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.paxCount', 'KİŞİ SAYISI')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.dayCount', 'BRÜT GÜN')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px', backgroundColor: '#991B1B', color: '#FFFFFF' }}>{t('meals.excursionHeader', 'GEZİ DÜŞÜŞÜ')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.morningPrice', 'SABAH FİYAT')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.eveningPrice', 'AKŞAM FİYAT')}</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>{t('meals.totalAmount', 'TOPLAM TUTAR')}</th>
+                </tr>
+                <tr style={{ backgroundColor: '#374151', color: '#E5E7EB', fontWeight: 'bold' }} dir="rtl">
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(اسم الشركة)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(اسم الفندق)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(تاريخ الدخول)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(صباح)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(مساء)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(تاريخ الخروج)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(صباح)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(مساء)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(عدد الأشخاص)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(عدد الأيام)</th>
+                  <th style={{ border: '1px solid black', padding: '4px', backgroundColor: '#7F1D1D' }}>(خصم الرحلة)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(سعر الصباح)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(سعر المساء)</th>
+                  <th style={{ border: '1px solid black', padding: '4px' }}>(المبلغ الإجمالي)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {meals.map((meal, index) => {
+                  const excursions = getExcursionsFromMeal(meal);
+                  const excDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
+                  const grossDays = meal.total_days + excDays;
 
-              return (
-                <tr key={meal.id || index} style={{ backgroundColor: index % 2 === 1 ? '#F9FAFB' : '#FFFFFF' }}>
-                  <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{meal.company_name || '-'}</td>
-                  <td style={{ border: '1px solid black', padding: '6px' }}>{meal.hotel_name}</td>
-                  <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.entry_date)}</td>
-                  <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.entry_morning > 0 ? '0,5' : '-'}</td>
-                  <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.entry_evening > 0 ? '0,5' : '-'}</td>
-                  <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.exit_date)}</td>
-                  <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
-                  <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
-                  <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{meal.pax_count}</td>
-                  <td style={{ border: '1px solid black', padding: '6px' }}>{grossDays} Gün</td>
-                  <td style={{ border: '1px solid black', padding: '6px', backgroundColor: excDays > 0 ? '#FEF2F2' : 'transparent', color: excDays > 0 ? '#DC2626' : 'black', fontWeight: excDays > 0 ? 'bold' : 'normal' }}>
-                    {excDays > 0 ? `${excDays} Gün` : '-'}
+                  return (
+                    <tr key={meal.id || index} style={{ backgroundColor: index % 2 === 1 ? '#F9FAFB' : '#FFFFFF' }}>
+                      <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{meal.company_name || '-'}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{meal.hotel_name}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.entry_date)}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.entry_morning > 0 ? '0,5' : '-'}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.entry_evening > 0 ? '0,5' : '-'}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.exit_date)}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{meal.pax_count}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{grossDays} Gün</td>
+                      <td style={{ border: '1px solid black', padding: '6px', backgroundColor: excDays > 0 ? '#FEF2F2' : 'transparent', color: excDays > 0 ? '#DC2626' : 'black', fontWeight: excDays > 0 ? 'bold' : 'normal' }}>
+                        {excDays > 0 ? `${excDays} Gün` : '-'}
+                      </td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{meal.morning_price} {meal.currency}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{meal.evening_price} {meal.currency}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>
+                        {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {/* Grand Total Footer Row */}
+                <tr style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold', fontSize: '13px' }}>
+                  <td colSpan={8} style={{ border: '1px solid black', padding: '10px', textAlign: 'right' }}>
+                    GENEL TOPLAM / الإجمالي الكلي ({meals.length} Kayıt):
                   </td>
-                  <td style={{ border: '1px solid black', padding: '6px' }}>{meal.morning_price} {meal.currency}</td>
-                  <td style={{ border: '1px solid black', padding: '6px' }}>{meal.evening_price} {meal.currency}</td>
-                  <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>
-                    {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                  <td style={{ border: '1px solid black', padding: '10px' }}>{grandPaxSum}</td>
+                  <td style={{ border: '1px solid black', padding: '10px' }}>{grandGrossDaysSum} Gün</td>
+                  <td style={{ border: '1px solid black', padding: '10px', backgroundColor: '#991B1B' }}>
+                    {grandExcursionDaysSum > 0 ? `${grandExcursionDaysSum} Gün` : '-'}
+                  </td>
+                  <td colSpan={2} style={{ border: '1px solid black', padding: '10px' }}>-</td>
+                  <td style={{ border: '1px solid black', padding: '10px', fontSize: '14px' }}>
+                    {Object.entries(totalsByCurrency).map(([curr, amt]) => (
+                      <div key={curr}>
+                        {amt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {curr}
+                      </div>
+                    ))}
                   </td>
                 </tr>
+              </tbody>
+            </table>
+
+            {/* Corporate Stamp/Signature Approval Section */}
+            {template === 'corporate' && (
+              <div style={{ marginTop: '48px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '40px' }}>
+                <div style={{ border: '1px solid #374151', borderRadius: '6px', padding: '16px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '40px' }}>
+                    HAZIRLAYAN / TESLİM EDEN (إعداد وتكليف الخدمة)
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontStyle: 'italic' }}>
+                    İmza & Kaşe / التوقيع والختم
+                  </div>
+                </div>
+
+                <div style={{ border: '1px solid #374151', borderRadius: '6px', padding: '16px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '40px' }}>
+                    KONTROL EDEN / ACENTA ONAYI (مراجعة واعتماد الوكالة)
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6B7280', fontStyle: 'italic' }}>
+                    İmza & Kaşe / التوقيع والختم
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* TEMPLATE 2: DAILY VARIABLE PAX BATCH TABLE */}
+        {/* ------------------------------------------------------------- */}
+        {template === 'daily' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            {meals.map((meal, mIdx) => {
+              const start = new Date(meal.entry_date);
+              const end = new Date(meal.exit_date);
+              const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
+              let mealPaxSum = 0;
+              let mealAmountSum = 0;
+
+              return (
+                <div key={meal.id || mIdx} style={{ border: '1px solid #374151', borderRadius: '6px', padding: '12px', backgroundColor: '#FFFFFF' }}>
+                  {/* Header Banner for Meal */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1F2937', color: '#FFFFFF', padding: '8px 12px', borderRadius: '4px', marginBottom: '10px', fontSize: '13px', fontWeight: 'bold' }}>
+                    <span>{mIdx + 1}. Kayıt: {meal.company_name || '-'} — {meal.hotel_name}</span>
+                    <span>Tarih: {formatDate(meal.entry_date)} - {formatDate(meal.exit_date)}</span>
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #D1D5DB', textAlign: 'center', fontSize: '11px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#374151', color: '#FFFFFF', fontWeight: 'bold' }}>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜN NO</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>TARİH</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜN</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>KİŞİ SAYISI (PAX)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>SABAH FİYAT</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>AKŞAM FİYAT</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜNLÜK BİRİM FİYAT</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜNLÜK TOPLAM TUTAR</th>
+                      </tr>
+                      <tr style={{ backgroundColor: '#4B5563', color: '#E5E7EB', fontWeight: 'bold' }} dir="rtl">
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(رقم اليوم)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(التاريخ)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(اليوم)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(عدد الأشخاص)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(سعر الصباح)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(سعر المساء)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(السعر اليومي)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(المبلغ اليومي الإجمالي)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const rows = [];
+                        let dayCount = 1;
+
+                        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                          const dateStr = d.toISOString().split('T')[0];
+                          let paxForDay = meal.pax_count;
+                          if (meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0) {
+                            const found = meal.daily_pax.find(p => p.date === dateStr);
+                            if (found && found.pax !== undefined) paxForDay = found.pax;
+                          }
+
+                          const dayNameTr = d.toLocaleDateString('tr-TR', { weekday: 'long' });
+                          const dayNameAr = d.toLocaleDateString('ar-SA', { weekday: 'long' });
+                          const dailyTotal = paxForDay * dailyPrice;
+
+                          mealPaxSum += paxForDay;
+                          mealAmountSum += dailyTotal;
+
+                          rows.push(
+                            <tr key={dateStr} style={{ backgroundColor: dayCount % 2 === 0 ? '#F9FAFB' : '#FFFFFF' }}>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>{dayCount}. Gün</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{formatDate(dateStr)}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{dayNameTr} / {dayNameAr}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>{paxForDay}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{meal.morning_price} {meal.currency}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{meal.evening_price} {meal.currency}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{dailyPrice} {meal.currency}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>
+                                {dailyTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                              </td>
+                            </tr>
+                          );
+                          dayCount++;
+                        }
+
+                        rows.push(
+                          <tr key="subtotal" style={{ backgroundColor: '#F3F4F6', fontWeight: 'bold', fontSize: '12px' }}>
+                            <td colSpan={3} style={{ border: '1px solid #D1D5DB', padding: '6px', textAlign: 'right' }}>
+                              HESAP TOPLAMI / إجمالي المجموعة:
+                            </td>
+                            <td style={{ border: '1px solid #D1D5DB', padding: '6px' }}>{mealPaxSum}</td>
+                            <td colSpan={3} style={{ border: '1px solid #D1D5DB', padding: '6px' }}>-</td>
+                            <td style={{ border: '1px solid #D1D5DB', padding: '6px', color: '#059669', fontSize: '13px' }}>
+                              {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                            </td>
+                          </tr>
+                        );
+
+                        return rows;
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
               );
             })}
 
-            {/* Grand Total Footer Row */}
-            <tr style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold', fontSize: '13px' }}>
-              <td colSpan={8} style={{ border: '1px solid black', padding: '10px', textAlign: 'right' }}>
-                GENEL TOPLAM / الإجمالي الكلي ({meals.length} {t('meals.countRecords', 'Kayıt')}):
-              </td>
-              <td style={{ border: '1px solid black', padding: '10px' }}>{grandPaxSum}</td>
-              <td style={{ border: '1px solid black', padding: '10px' }}>{grandGrossDaysSum} Gün</td>
-              <td style={{ border: '1px solid black', padding: '10px', backgroundColor: '#991B1B' }}>
-                {grandExcursionDaysSum > 0 ? `${grandExcursionDaysSum} Gün` : '-'}
-              </td>
-              <td colSpan={2} style={{ border: '1px solid black', padding: '10px' }}>-</td>
-              <td style={{ border: '1px solid black', padding: '10px', fontSize: '14px' }}>
+            {/* Grand Summary Footer Card */}
+            <div style={{ border: '2px solid #1F2937', borderRadius: '6px', padding: '14px', backgroundColor: '#1F2937', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: 'bold' }}>
+              <span>TÜM GRUPLAR GENEL TOPLAMI / الإجمالي الكلي لجميع المجموعات ({meals.length} Kayıt):</span>
+              <span>
                 {Object.entries(totalsByCurrency).map(([curr, amt]) => (
-                  <div key={curr}>
+                  <span key={curr} style={{ marginLeft: '16px', color: '#34D399' }}>
                     {amt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {curr}
-                  </div>
+                  </span>
                 ))}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Corporate Approval Stamp/Signature Boxes */}
-        {template === 'corporate' && (
-          <div style={{ marginTop: '48px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '40px' }}>
-            <div style={{ border: '1px solid #374151', borderRadius: '6px', padding: '16px', textAlign: 'center' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '13px', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '40px' }}>
-                HAZIRLAYAN / TESLİM EDEN (إعداد وتكليف الخدمة)
-              </div>
-              <div style={{ fontSize: '11px', color: '#6B7280', fontStyle: 'italic' }}>
-                İmza & Kaşe / التوقيع والختم
-              </div>
+              </span>
             </div>
+          </div>
+        )}
 
-            <div style={{ border: '1px solid #374151', borderRadius: '6px', padding: '16px', textAlign: 'center' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '13px', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '40px' }}>
-                KONTROL EDEN / ACENTA ONAYI (مراجعة واعتماد الوكالة)
-              </div>
-              <div style={{ fontSize: '11px', color: '#6B7280', fontStyle: 'italic' }}>
-                İmza & Kaşe / التوقيع والختم
+        {/* ------------------------------------------------------------- */}
+        {/* TEMPLATE 3: EXCURSION DEDUCTIONS BATCH TABLE */}
+        {/* ------------------------------------------------------------- */}
+        {template === 'excursion' && (
+          <div>
+            <div style={{ marginBottom: '12px', fontWeight: 'bold', fontSize: '13px', color: '#1E3A8A' }}>
+              1. BRÜT KONAKLAMA VE HESAP ÖZETLERİ (معلومات الإقامة الإجمالية)
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', textAlign: 'center', fontSize: '12px', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold' }}>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>ŞİRKET ADI</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>OTEL ADI</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>GİRİŞ TARİHİ</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>ÇIKIŞ TARİHİ</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>BRÜT GÜN</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>KİŞİ SAYISI</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>GÜNLÜK KİŞİ BAŞI FİYAT</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>NET TUTAR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {meals.map((meal, idx) => {
+                  const excursions = getExcursionsFromMeal(meal);
+                  const excDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
+                  const grossDays = meal.total_days + excDays;
+                  const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
+
+                  return (
+                    <tr key={meal.id || idx} style={{ backgroundColor: idx % 2 === 1 ? '#F9FAFB' : '#FFFFFF' }}>
+                      <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{meal.company_name || '-'}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{meal.hotel_name}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.entry_date)}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.exit_date)}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{grossDays} Gün</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{meal.pax_count}</td>
+                      <td style={{ border: '1px solid black', padding: '6px' }}>{dailyPrice} {meal.currency}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold', color: '#059669' }}>
+                        {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div style={{ marginBottom: '12px', fontWeight: 'bold', fontSize: '13px', color: '#991B1B' }}>
+              2. TOPLU GEZİ VE YEMEK KESİNTİSİ DÖKÜM DETAYLARI (تفاصيل خصومات الرحلات والوجبات)
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #991B1B', textAlign: 'center', fontSize: '11px', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#991B1B', color: '#FFFFFF', fontWeight: 'bold' }}>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>ŞİRKET / OTEL</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>GEZİ ADI / NO</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>BAŞLANGIÇ TARİHİ</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>BİTİŞ TARİHİ</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>KESİNTİ GÜN</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>KİŞİ SAYISI</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>KESİNTİ AÇIKLAMASI</th>
+                  <th style={{ border: '1px solid black', padding: '6px' }}>TOPLAM KESİNTİ TUTARI</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  let hasExcursions = false;
+                  const excRows: any[] = [];
+
+                  meals.forEach((meal, mIdx) => {
+                    const excursions = getExcursionsFromMeal(meal);
+                    const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
+                    const costPerDayAllPax = meal.pax_count * dailyPrice;
+
+                    excursions.forEach((exc, eIdx) => {
+                      hasExcursions = true;
+                      const dAmount = (exc.days || 0) * costPerDayAllPax;
+
+                      excRows.push(
+                        <tr key={`${mIdx}-${eIdx}`}>
+                          <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>
+                            {meal.company_name || '-'} ({meal.hotel_name})
+                          </td>
+                          <td style={{ border: '1px solid black', padding: '6px' }}>{eIdx + 1}. Gezi</td>
+                          <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(exc.start_date)}</td>
+                          <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(exc.end_date)}</td>
+                          <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{exc.days} Gün</td>
+                          <td style={{ border: '1px solid black', padding: '6px' }}>{meal.pax_count}</td>
+                          <td style={{ border: '1px solid black', padding: '6px' }}>{exc.note || '-'}</td>
+                          <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold', color: '#DC2626' }}>
+                            -{dAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  });
+
+                  if (!hasExcursions) {
+                    return (
+                      <tr>
+                        <td colSpan={8} style={{ padding: '12px', color: '#6B7280' }}>
+                          Seçili hesaplarda gezi veya kesinti kaydı bulunmamaktadır. (لا توجد خصومات رحلات)
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return excRows;
+                })()}
+              </tbody>
+            </table>
+
+            {/* Grand Summary Card */}
+            <div style={{ marginLeft: 'auto', width: '420px', border: '2px solid #065F46', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: '#D1FAE5', color: '#065F46', fontSize: '14px', fontWeight: 'bold' }}>
+                <span>TOPLAM NET ÖDENECEK TUTAR (الصافي الكلي):</span>
+                <span>
+                  {Object.entries(totalsByCurrency).map(([curr, amt]) => (
+                    <div key={curr}>
+                      {amt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {curr}
+                    </div>
+                  ))}
+                </span>
               </div>
             </div>
           </div>
