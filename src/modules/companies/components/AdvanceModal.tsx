@@ -17,9 +17,10 @@ interface AdvanceModalProps {
   personelId: string;
   personelName: string;
   currency: string;
+  personelRegion?: string;
 }
 
-export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelName, currency }: AdvanceModalProps) {
+export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelName, currency, personelRegion }: AdvanceModalProps) {
   const { t } = useTranslation();
   const { region } = useRegion();
   const { user } = useAuth();
@@ -84,7 +85,7 @@ export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelN
         companyId: personelId,
         supplierName: personelName,
         payee: personelName,
-        category: t('companies.personnelAdvancePayment', 'Personel Avans / Ödeme'),
+        category: 'Personel Avans / Ödeme',
         amount: amount,
         paidAmount: amount, // Since it's an advance given immediately, it's fully "paid" out of the safe
         currency: selectedCurrency as any,
@@ -94,7 +95,7 @@ export function AdvanceModal({ isOpen, onClose, onSuccess, personelId, personelN
         paymentMethod: paymentMethod,
         accountId: accountId,
         description: description,
-        region: region === 'all' ? 'Türkiye' : region, // Default if all
+        region: region === 'all' ? (personelRegion || 'Türkiye') : region,
         usd_rate: usdRate,
         createdBy: user?.name || 'Sistem',
         paymentHistory: [{

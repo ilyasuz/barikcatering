@@ -42,16 +42,28 @@ export function CompaniesPage() {
       // Bize olan borçlarını artıranlar (Bizim alacaklarımız):
       // - Müşteriye kesilen faturalar
       // - Tedarikçi/Personele yapılan ödemeler (Tediye, Avans, Peşinatlar)
+      const isAdvanceOrTediye = (category?: string, description?: string) => {
+        const cat = (category || '').toLowerCase();
+        const desc = (description || '').toLowerCase();
+        return (
+          cat.includes('tediye') ||
+          cat.includes('avans') ||
+          cat.includes('personel') ||
+          cat.includes('advance') ||
+          cat.includes('سلفة') ||
+          desc.includes('avans') ||
+          desc.includes('advance') ||
+          desc.includes('سلفة')
+        );
+      };
+
       const debtToUs = isMusteri
         ? cIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
-        : cExpenses.filter(e => e.category === 'Tediye (Ödeme Yapma)' || e.category === 'Personel Avans/Ödeme').reduce((sum, e) => sum + e.amount, 0) + cExpenses.filter(e => e.category !== 'Tediye (Ödeme Yapma)' && e.category !== 'Personel Avans/Ödeme').reduce((sum, e) => sum + (e.paidAmount || 0), 0);
+        : cExpenses.filter(e => isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0) + cExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + (e.paidAmount || 0), 0);
         
-      // Bize olan borçlarını azaltanlar / Bizi borçlandıranlar:
-      // - Müşteriden alınan ödemeler (Tahsilat, Peşinatlar)
-      // - Tedarikçiden alınan faturalar / Personel maaş hak edişleri
       const debtToThem = isMusteri
         ? cIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + (i.paidAmount || 0), 0) + cIncomes.filter(i => i.category === 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
-        : cExpenses.filter(e => e.category !== 'Tediye (Ödeme Yapma)' && e.category !== 'Personel Avans/Ödeme').reduce((sum, e) => sum + e.amount, 0);
+        : cExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0);
         
       const activeCurrency = cIncomes.length > 0 ? cIncomes[0].currency 
                            : cExpenses.length > 0 ? cExpenses[0].currency 

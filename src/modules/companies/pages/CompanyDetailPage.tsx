@@ -130,8 +130,7 @@ export function CompanyDetailPage() {
         }
       } else {
         if (tx.txType === 'expense') {
-          const catStr = (tx.category || '').toLowerCase();
-          if (catStr === 'tediye (ödeme yapma)' || catStr.includes('avans') || catStr.includes('personel ödemesi')) {
+          if (isAdvanceOrTediye(tx.category, tx.description)) {
             invEffect = tx.amount;
             payEffectSign = 0;
           } else {
@@ -213,19 +212,28 @@ export function CompanyDetailPage() {
       return 0;
     });
 
-    // Calculate Balance logic just like in CompaniesPage (Without initial balance)
-    const isAdvanceOrTediye = (category: string) => {
+    const isAdvanceOrTediye = (category?: string, description?: string) => {
       const cat = (category || '').toLowerCase();
-      return cat === 'tediye (ödeme yapma)' || cat.includes('avans') || cat.includes('personel ödemesi');
+      const desc = (description || '').toLowerCase();
+      return (
+        cat.includes('tediye') ||
+        cat.includes('avans') ||
+        cat.includes('personel') ||
+        cat.includes('advance') ||
+        cat.includes('سلفة') ||
+        desc.includes('avans') ||
+        desc.includes('advance') ||
+        desc.includes('سلفة')
+      );
     };
     
     const debtToUs = isMusteri
       ? currentIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
-      : currentExpenses.filter(e => isAdvanceOrTediye(e.category)).reduce((sum, e) => sum + e.amount, 0) + currentExpenses.filter(e => !isAdvanceOrTediye(e.category)).reduce((sum, e) => sum + (e.paidAmount || 0), 0);
+      : currentExpenses.filter(e => isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0) + currentExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + (e.paidAmount || 0), 0);
       
     const debtToThem = isMusteri
       ? currentIncomes.filter(i => i.category !== 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + (i.paidAmount || 0), 0) + currentIncomes.filter(i => i.category === 'Tahsilat (Ödeme Alma)').reduce((sum, i) => sum + i.amount, 0)
-      : currentExpenses.filter(e => !isAdvanceOrTediye(e.category)).reduce((sum, e) => sum + e.amount, 0);
+      : currentExpenses.filter(e => !isAdvanceOrTediye(e.category, e.description)).reduce((sum, e) => sum + e.amount, 0);
       
     const currentBalance = debtToUs - debtToThem;
     const isOweUs = currentBalance > 0;
@@ -781,6 +789,7 @@ export function CompanyDetailPage() {
         personelId={record.id}
         personelName={record.name}
         currency={record.currency || 'TRY'}
+        personelRegion={record.region}
       />
     )}
     </>
