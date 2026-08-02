@@ -130,6 +130,15 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
               trend={calculateTrend(currentMonthBreakdown.SAR, lastMonthBreakdown.SAR)}
             />
           </div>
+          <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('all', 'TRY'); }}>
+            <KPICard 
+              title={t('income.tryRevenues', 'TL Gelirleri (TRY)')}
+              value={`₺${incomeBreakdown.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              className="small-kpi"
+              equivalentStr={getEqStr(incomeBreakdown.TRY, 'TRY')}
+              trend={calculateTrend(currentMonthBreakdown.TRY, lastMonthBreakdown.TRY)}
+            />
+          </div>
           <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('all', 'all'); }}>
             <KPICard 
               title={t('income.totalRevenueParam', 'Toplam Gelir ({{currency}})', { currency: displayCurrency })}
@@ -164,6 +173,14 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
               className="small-kpi"
             />
           </div>
+          <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('pending', 'TRY'); }}>
+            <KPICard 
+              title={t('income.tryPending', 'TL Bekleyen (TRY)')}
+              value={`₺${pendingBreakdown.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              className="small-kpi"
+              equivalentStr={getEqStr(pendingBreakdown.TRY, 'TRY')}
+            />
+          </div>
           <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('pending', 'all'); }}>
             <KPICard 
               title={t('income.totalPendingParam', 'Toplam Bekleyen ({{currency}})', { currency: displayCurrency })}
@@ -195,6 +212,14 @@ export function IncomeKPIs({ data = [], netProfit, onFilterClick, activeFilter =
               title={t('income.sarOverdue', 'Riyal Geciken (SAR)')}
               value={`${overdueBreakdown.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
               className="small-kpi"
+            />
+          </div>
+          <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('overdue', 'TRY'); }}>
+            <KPICard 
+              title={t('income.tryOverdue', 'TL Geciken (TRY)')}
+              value={`₺${overdueBreakdown.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              className="small-kpi"
+              equivalentStr={getEqStr(overdueBreakdown.TRY, 'TRY')}
             />
           </div>
           <div style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); onFilterClick && onFilterClick('overdue', 'all'); }}>

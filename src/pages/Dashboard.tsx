@@ -382,6 +382,12 @@ export function Dashboard() {
                 trend={stats.trends.income.SAR}
               />
               <KPICard 
+                title={t('dashboard.tryIncome', 'TL Gelirleri (TRY)')} 
+                value={`₺${stats.breakdown.income.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.income.TRY, 'TRY')}
+              />
+              <KPICard 
                 title={`${t('reports.totalIncome', 'Toplam Gelir')} (${stats.displayCurrency})`}
                 value={region === 'all' 
                   ? `${stats.displaySymbol}${stats.totalIncomeBase.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
@@ -414,6 +420,12 @@ export function Dashboard() {
                 trend={stats.trends.expense.SAR}
               />
               <KPICard 
+                title={t('dashboard.tryExpense', 'TL Giderleri (TRY)')} 
+                value={`₺${stats.breakdown.expense.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.expense.TRY, 'TRY')}
+              />
+              <KPICard 
                 title={`${t('reports.totalExpense', 'Toplam Gider')} (${stats.displayCurrency})`}
                 value={region === 'all' 
                   ? `${stats.displaySymbol}${stats.totalExpenseBase.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
@@ -442,6 +454,12 @@ export function Dashboard() {
                 title={t('dashboard.sarNet', 'SAR Net Durum')} 
                 value={`${stats.breakdown.net.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
                 className="small-kpi"
+              />
+              <KPICard 
+                title={t('dashboard.tryNet', 'TL Net Durum')} 
+                value={`₺${stats.breakdown.net.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.net.TRY, 'TRY')}
               />
               <KPICard 
                 title={`${t('dashboard.totalNet', 'Toplam Net Durum')} (${stats.displayCurrency})`}
@@ -476,6 +494,12 @@ export function Dashboard() {
                 title={t('dashboard.sarBalance', 'SAR Bakiye')} 
                 value={`${stats.breakdown.accounts.SAR.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`}
                 className="small-kpi"
+              />
+              <KPICard 
+                title={t('dashboard.tryBalance', 'TL Bakiye')} 
+                value={`₺${stats.breakdown.accounts.TRY.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                className="small-kpi"
+                equivalentStr={getEqStr(stats.breakdown.accounts.TRY, 'TRY')}
               />
               <KPICard 
                 title={`${t('dashboard.totalBalance', 'Toplam Bakiye')} (${stats.displayCurrency})`}
