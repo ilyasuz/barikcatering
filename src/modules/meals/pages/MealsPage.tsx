@@ -54,6 +54,7 @@ export function MealsPage() {
   }, [data]);
 
   const [exportMeal, setExportMeal] = useState<MealCalculation | null>(null);
+  const [isBatchExportOpen, setIsBatchExportOpen] = useState(false);
   const [printMeal, setPrintMeal] = useState<MealCalculation | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<MealExportTemplate>('standard');
   const printRef = useRef<HTMLDivElement>(null);
@@ -276,9 +277,9 @@ export function MealsPage() {
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           {filteredData.length > 0 && (
-            <button className="btn-secondary" onClick={() => setShowBatchPrint(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="btn-secondary" onClick={() => setIsBatchExportOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Printer size={18} />
-              <span>{t('meals.batchPrint', 'Toplu Yazdır')} ({filteredData.length})</span>
+              <span>{t('meals.batchPrint', 'Toplu Yazdır / Çıktı')} ({filteredData.length})</span>
             </button>
           )}
           {(user?.role === 'admin' || user?.role === 'editor') && (
@@ -370,9 +371,21 @@ export function MealsPage() {
         isOpen={!!exportMeal}
         onClose={() => setExportMeal(null)}
         meal={exportMeal}
-        onPrintWithTemplate={(m, tpl) => {
-          setPrintMeal(m);
+        onPrintWithTemplate={(tpl) => {
+          if (exportMeal) {
+            setPrintMeal(exportMeal);
+            setSelectedTemplate(tpl);
+          }
+        }}
+      />
+
+      <MealExportModal
+        isOpen={isBatchExportOpen}
+        onClose={() => setIsBatchExportOpen(false)}
+        meals={filteredData}
+        onPrintWithTemplate={(tpl) => {
           setSelectedTemplate(tpl);
+          setShowBatchPrint(true);
         }}
       />
 
@@ -424,7 +437,7 @@ export function MealsPage() {
                 printWindow.document.write(`
                   <html>
                     <head>
-                      <title>{t('meals.batchPrintInvoice', 'Toplu Fatura Yazdır')}</title>
+                      <title>${t('meals.batchPrintInvoice', 'Toplu Fatura Yazdır')}</title>
                       <script src="https://cdn.tailwindcss.com"></script>
                       <style>
                         @media print {
@@ -450,7 +463,7 @@ export function MealsPage() {
         </div>
         <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', maxHeight: '60vh', overflowY: 'auto' }}>
           <div ref={batchPrintRef}>
-            <BatchMealPrintView meals={filteredData} />
+            <BatchMealPrintView meals={filteredData} template={selectedTemplate} />
           </div>
         </div>
       </Modal>

@@ -8,21 +8,24 @@ import { FileSpreadsheet, Printer, FileText, Calendar, Compass, Building2, Check
 interface MealExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  meal: MealCalculation | null;
-  onPrintWithTemplate: (meal: MealCalculation, template: MealExportTemplate) => void;
+  meal?: MealCalculation | null;
+  meals?: MealCalculation[];
+  onPrintWithTemplate: (template: MealExportTemplate) => void;
 }
 
 export function MealExportModal({
   isOpen,
   onClose,
   meal,
+  meals,
   onPrintWithTemplate
 }: MealExportModalProps) {
   const { t } = useTranslation();
   const [selectedTemplate, setSelectedTemplate] = useState<MealExportTemplate>('standard');
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
-  if (!meal) return null;
+  const activeMeal = meal || (meals && meals.length > 0 ? meals[0] : null);
+  if (!activeMeal) return null;
 
   const templates: {
     id: MealExportTemplate;
@@ -69,7 +72,13 @@ export function MealExportModal({
   const handleExcelExport = async () => {
     try {
       setIsExportingExcel(true);
-      await exportMealToExcel(meal, selectedTemplate);
+      if (meals && meals.length > 0) {
+        for (const m of meals) {
+          await exportMealToExcel(m, selectedTemplate);
+        }
+      } else if (activeMeal) {
+        await exportMealToExcel(activeMeal, selectedTemplate);
+      }
       onClose();
     } catch (err) {
       console.error('Error exporting to Excel:', err);
@@ -80,7 +89,7 @@ export function MealExportModal({
   };
 
   const handlePrint = () => {
-    onPrintWithTemplate(meal, selectedTemplate);
+    onPrintWithTemplate(selectedTemplate);
     onClose();
   };
 
