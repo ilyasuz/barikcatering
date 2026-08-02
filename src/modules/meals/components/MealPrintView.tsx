@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { MealCalculation } from '../types';
+import { getExcursionsFromMeal } from '../types';
 import { useExchangeRates } from '../../../core/contexts/ExchangeRatesContext';
 import { useTranslation } from 'react-i18next';
 
@@ -22,11 +23,12 @@ export const MealPrintView = forwardRef<HTMLDivElement, MealPrintViewProps>(({ m
   if (meal.currency === 'SAR') { eqAmount = meal.total_amount / rate; eqCurrency = 'USD'; }
   else if (meal.currency === 'USD') { eqAmount = meal.total_amount * rate; eqCurrency = 'SAR'; }
 
-  const excursionDays = meal.excursion_days || 0;
-  const grossDays = meal.total_days + excursionDays;
+  const excursions = getExcursionsFromMeal(meal);
+  const totalExcursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
+  const grossDays = meal.total_days + totalExcursionDays;
   const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
   const costPerDayAllPax = meal.pax_count * dailyPrice;
-  const deductionAmount = excursionDays * costPerDayAllPax;
+  const deductionAmount = totalExcursionDays * costPerDayAllPax;
 
   return (
     <div ref={ref} className="bg-white text-black p-8" style={{ width: '100%', minHeight: '100vh', direction: 'ltr', color: '#000', backgroundColor: '#fff' }}>
@@ -98,20 +100,24 @@ export const MealPrintView = forwardRef<HTMLDivElement, MealPrintViewProps>(({ m
             <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", fontWeight: "bold" }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
             <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold" }}>{meal.pax_count}</td>
             <td style={{ border: "1px solid black", padding: "8px", fontWeight: "bold", backgroundColor: "#fef3c7" }}>{grossDays}</td>
-            <td style={{ border: "1px solid black", padding: "8px", color: excursionDays > 0 ? "#dc2626" : "inherit", backgroundColor: excursionDays > 0 ? "#fef2f2" : "transparent" }}>
-              {excursionDays > 0 ? (
-                <div>
-                  <strong style={{ fontSize: "14px" }}>-{excursionDays} Gün</strong>
-                  {meal.excursion_note && (
-                    <div style={{ fontSize: "12px", fontWeight: "bold", color: "#991b1b", marginTop: "2px" }}>
-                      {meal.excursion_note}
+            <td style={{ border: "1px solid black", padding: "8px", color: totalExcursionDays > 0 ? "#dc2626" : "inherit", backgroundColor: totalExcursionDays > 0 ? "#fef2f2" : "transparent" }}>
+              {excursions.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <strong style={{ fontSize: "14px" }}>-{totalExcursionDays} Gün</strong>
+                  {excursions.map((ex, i) => (
+                    <div key={i} style={{ borderTop: i > 0 ? '1px dashed #fecaca' : 'none', paddingTop: i > 0 ? '3px' : '0' }}>
+                      {ex.note && (
+                        <div style={{ fontSize: "12px", fontWeight: "bold", color: "#991b1b" }}>
+                          {ex.note}
+                        </div>
+                      )}
+                      {ex.start_date && (
+                        <div style={{ fontSize: "11px", color: "#4b5563" }}>
+                          -{ex.days}g ({formatDate(ex.start_date)} - {formatDate(ex.end_date || ex.start_date)})
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {meal.excursion_start_date && (
-                    <div style={{ fontSize: "11px", color: "#4b5563", marginTop: "1px" }}>
-                      ({formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date || meal.excursion_start_date)})
-                    </div>
-                  )}
+                  ))}
                   <div style={{ fontSize: "11px", fontWeight: "bold", color: "#dc2626", marginTop: "2px" }}>
                     (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency})
                   </div>
@@ -132,7 +138,7 @@ export const MealPrintView = forwardRef<HTMLDivElement, MealPrintViewProps>(({ m
             <td colSpan={9} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }} dir="rtl">المجموع الإجمالي</td>
             <td style={{ border: "1px solid black", padding: "8px", backgroundColor: "#fde047" }}>{meal.total_days} gün (Net)</td>
             <td style={{ border: "1px solid black", padding: "8px", color: "#dc2626", backgroundColor: "#fef2f2" }}>
-              {excursionDays > 0 ? `-${excursionDays} gün` : '-'}
+              {totalExcursionDays > 0 ? `-${totalExcursionDays} gün` : '-'}
             </td>
             <td colSpan={2} style={{ border: "1px solid black", padding: "8px", textAlign: "right" }}>{t('meals.total', 'TOPLAM')} {meal.currency}</td>
             <td style={{ border: "1px solid black", padding: "8px", fontSize: "18px", color: "#15803d", backgroundColor: "#fde047" }}>

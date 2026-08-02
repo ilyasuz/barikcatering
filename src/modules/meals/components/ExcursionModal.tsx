@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../../../core/components/Modal/Modal';
 import { FormattedNumberInput } from '../../../core/components/Form/FormattedNumberInput';
 import { mealApi } from '../api';
-import type { MealCalculation } from '../types';
+import { getExcursionsFromMeal } from '../types';
+import type { MealCalculation, MealExcursion } from '../types';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Compass, Trash2, ArrowRight } from 'lucide-react';
+import { Calendar, Compass, Trash2, Plus, ArrowRight } from 'lucide-react';
 
 interface ExcursionModalProps {
   isOpen: boolean;
@@ -15,50 +16,87 @@ interface ExcursionModalProps {
 
 export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionModalProps) {
   const { t } = useTranslation();
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [excursionDays, setExcursionDays] = useState<number>(0);
-  const [note, setNote] = useState('');
+  const [excursions, setExcursions] = useState<MealExcursion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (meal && isOpen) {
-      setStartDate(meal.excursion_start_date || meal.entry_date || '');
-      setEndDate(meal.excursion_end_date || meal.entry_date || '');
-      setExcursionDays(meal.excursion_days || 0);
-      setNote(meal.excursion_note || '');
+      const existing = getExcursionsFromMeal(meal);
+      if (existing.length > 0) {
+        setExcursions(existing);
+      } else {
+        // Initialize with one default excursion row
+        setExcursions([{
+          id: Date.now().toString(),
+          start_date: meal.entry_date || '',
+          end_date: meal.entry_date || '',
+          days: 1,
+          note: ''
+        }]);
+      }
       setError(null);
     }
   }, [meal, isOpen]);
 
-  // Calculate days when date range changes
-  useEffect(() => {
-    if (startDate && endDate) {
-      const d1 = new Date(startDate);
-      const d2 = new Date(endDate);
-      if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
-        const diffTime = d2.getTime() - d1.getTime();
-        if (diffTime >= 0) {
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          setExcursionDays(diffDays === 0 ? 1 : diffDays);
-        }
-      }
-    }
-  }, [startDate, endDate]);
-
   if (!meal) return null;
 
-  // Base calculations
-  const currentExcursionDays = meal.excursion_days || 0;
-  // Restore gross days if excursion already exists
-  const grossDays = meal.total_days + currentExcursionDays;
+  // Calculate gross days before any excursion deductions
+  const currentExcursions = getExcursionsFromMeal(meal);
+  const currentTotalExcursionDays = currentExcursions.reduce((sum, item) => sum + (item.days || 0), 0);
+  const grossDays = meal.total_days + currentTotalExcursionDays;
+
   const dailyPricePerPax = (meal.morning_price || 0) + (meal.evening_price || 0);
   const costPerDayAllPax = (meal.pax_count || 0) * dailyPricePerPax;
 
-  const newNetDays = Math.max(0, grossDays - (excursionDays || 0));
-  const totalDeductionAmount = (excursionDays || 0) * costPerDayAllPax;
+  // Total excursion days currently entered in form
+  const newTotalExcursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
+  const newNetDays = Math.max(0, grossDays - newTotalExcursionDays);
+  const totalDeductionAmount = newTotalExcursionDays * costPerDayAllPax;
   const newTotalAmount = newNetDays * costPerDayAllPax;
+
+  const handleAddExcursionRow = () => {
+    setExcursions(prev => [
+      ...prev,
+      {
+        id: Date.now().toString() + Math.random().toString().substring(2, 6),
+        start_date: meal.entry_date || '',
+        end_date: meal.entry_date || '',
+        days: 1,
+        note: ''
+      }
+    ]);
+  };
+
+  const handleRemoveExcursionRow = (id: string) => {
+    setExcursions(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleExcursionChange = (id: string, field: keyof MealExcursion, value: any) => {
+    setExcursions(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const updated = { ...item, [field]: value };
+
+      // Auto calculate days when dates change
+      if (field === 'start_date' || field === 'end_date') {
+        const sDate = field === 'start_date' ? value : item.start_date;
+        const eDate = field === 'end_date' ? value : item.end_date;
+        if (sDate && eDate) {
+          const d1 = new Date(sDate);
+          const d2 = new Date(eDate);
+          if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+            const diffTime = d2.getTime() - d1.getTime();
+            if (diffTime >= 0) {
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              updated.days = diffDays === 0 ? 1 : diffDays;
+            }
+          }
+        }
+      }
+
+      return updated;
+    }));
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,25 +105,35 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
     setLoading(true);
 
     try {
+      const validExcursions = excursions.filter(ex => ex.days > 0);
+      const totalDays = validExcursions.reduce((sum, ex) => sum + (ex.days || 0), 0);
+      const netDays = Math.max(0, grossDays - totalDays);
+      const totalAmt = netDays * costPerDayAllPax;
+
+      const earliestDate = validExcursions[0]?.start_date || '';
+      const latestDate = validExcursions[validExcursions.length - 1]?.end_date || earliestDate;
+      const noteSummary = JSON.stringify(validExcursions);
+
       await mealApi.update(meal.id, {
-        excursion_start_date: startDate,
-        excursion_end_date: endDate,
-        excursion_days: excursionDays,
-        excursion_note: note,
-        total_days: newNetDays,
-        total_amount: newTotalAmount
+        excursion_start_date: earliestDate,
+        excursion_end_date: latestDate,
+        excursion_days: totalDays,
+        excursion_note: noteSummary,
+        total_days: netDays,
+        total_amount: totalAmt
       });
+
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error('Error saving excursion:', err);
-      setError(err.message || t('meals.excursionSaveError', 'Gezi kaydedilirken bir hata oluştu'));
+      console.error('Error saving excursions:', err);
+      setError(err.message || t('meals.excursionSaveError', 'Geziler kaydedilirken bir hata oluştu'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveExcursion = async () => {
+  const handleClearAllExcursions = async () => {
     if (!meal) return;
     setError(null);
     setLoading(true);
@@ -102,8 +150,8 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error('Error removing excursion:', err);
-      setError(err.message || t('meals.excursionRemoveError', 'Gezi silinirken bir hata oluştu'));
+      console.error('Error removing excursions:', err);
+      setError(err.message || t('meals.excursionRemoveError', 'Geziler silinirken bir hata oluştu'));
     } finally {
       setLoading(false);
     }
@@ -119,7 +167,7 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
           <span>{t('meals.excursionModalTitle', 'Gezi Ekle / Gün Düşüşü')}</span>
         </div>
       }
-      width="600px"
+      width="680px"
     >
       <form onSubmit={handleSave} className="form-layout">
         {error && (
@@ -128,6 +176,7 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
           </div>
         )}
 
+        {/* Meal Info Header */}
         <div style={{
           backgroundColor: 'var(--bg-secondary)',
           padding: '12px 16px',
@@ -153,55 +202,103 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{t('meals.excursionStartDate', 'Gezi Başlangıç Tarihi')}</label>
-            <input
-              type="date"
-              className="form-control"
-              value={startDate}
-              min={meal.entry_date}
-              max={meal.exit_date}
-              onChange={e => setStartDate(e.target.value)}
-              required
-            />
+        {/* Excursions List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--accent)' }}>
+              ⛺ {t('meals.excursionListTitle', 'Geziler / Düşüşler')} ({excursions.length})
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ padding: '4px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={handleAddExcursionRow}
+            >
+              <Plus size={16} />
+              <span>{t('meals.addNewExcursionRow', '+ Başka Gezi Ekle')}</span>
+            </button>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('meals.excursionEndDate', 'Gezi Bitiş Tarihi')}</label>
-            <input
-              type="date"
-              className="form-control"
-              value={endDate}
-              min={startDate || meal.entry_date}
-              max={meal.exit_date}
-              onChange={e => setEndDate(e.target.value)}
-              required
-            />
-          </div>
-        </div>
+          {excursions.map((ex, idx) => (
+            <div
+              key={ex.id || idx}
+              style={{
+                padding: '14px',
+                backgroundColor: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                position: 'relative'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  {idx + 1}. {t('meals.excursionItem', 'Gezi')}
+                </span>
+                {excursions.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn-text"
+                    style={{ color: '#EF4444', padding: '2px 6px' }}
+                    title={t('common.delete', 'Sil')}
+                    onClick={() => handleRemoveExcursionRow(ex.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{t('meals.excursionDays', 'Düşülecek Gezi Gün Sayısı')}</label>
-            <FormattedNumberInput
-              className="form-control"
-              value={excursionDays}
-              onChange={val => setExcursionDays(val)}
-              required
-            />
-          </div>
+              <div className="form-row" style={{ marginBottom: '10px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>{t('meals.excursionStartDate', 'Başlangıç Tarihi')}</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={ex.start_date}
+                    min={meal.entry_date}
+                    max={meal.exit_date}
+                    onChange={e => handleExcursionChange(ex.id, 'start_date', e.target.value)}
+                    required
+                  />
+                </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('meals.excursionNote', 'Gezi Açıklaması / Notu')}</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder={t('meals.excursionNotePlaceholder', 'Örn: Mekke / Medine Gezisi')}
-              value={note}
-              onChange={e => setNote(e.target.value)}
-            />
-          </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>{t('meals.excursionEndDate', 'Bitiş Tarihi')}</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={ex.end_date}
+                    min={ex.start_date || meal.entry_date}
+                    max={meal.exit_date}
+                    onChange={e => handleExcursionChange(ex.id, 'end_date', e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>{t('meals.excursionDays', 'Düşülecek Gün Sayısı')}</label>
+                  <FormattedNumberInput
+                    className="form-control"
+                    value={ex.days}
+                    onChange={val => handleExcursionChange(ex.id, 'days', val)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>{t('meals.excursionNote', 'Gezi Açıklaması / Notu')}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder={t('meals.excursionNotePlaceholder', 'Örn: Mekke Gezisi veya Medine Ziyareti')}
+                    value={ex.note || ''}
+                    onChange={e => handleExcursionChange(ex.id, 'note', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Calculation Summary Box */}
@@ -227,8 +324,8 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#EF4444' }}>
-            <span>{t('meals.excursionDeduction', 'Gezi Nedeniyle Düşülen')}:</span>
-            <span><strong>-{excursionDays}</strong> {t('meals.daysUnit', 'gün')} (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(totalDeductionAmount)} {meal.currency})</span>
+            <span>{t('meals.excursionDeductionTotal', 'Geziler Nedeniyle Toplam Düşülen')}:</span>
+            <span><strong>-{newTotalExcursionDays}</strong> {t('meals.daysUnit', 'gün')} (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(totalDeductionAmount)} {meal.currency})</span>
           </div>
 
           <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }}></div>
@@ -244,16 +341,16 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-          {currentExcursionDays > 0 ? (
+          {currentTotalExcursionDays > 0 ? (
             <button
               type="button"
               className="btn-text"
               style={{ color: '#EF4444', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
-              onClick={handleRemoveExcursion}
+              onClick={handleClearAllExcursions}
               disabled={loading}
             >
               <Trash2 size={16} />
-              {t('meals.removeExcursion', 'Geziyi Kaldır')}
+              {t('meals.removeAllExcursions', 'Tüm Gezileri Sil')}
             </button>
           ) : <div></div>}
 
@@ -261,8 +358,8 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
             <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
               {t('common.cancel', 'İptal')}
             </button>
-            <button type="submit" className="btn-primary" disabled={loading || excursionDays <= 0}>
-              {loading ? t('common.saving', 'Kaydediliyor...') : t('meals.saveExcursionDeduction', 'Geziyi Kaydet ve Düş')}
+            <button type="submit" className="btn-primary" disabled={loading || newTotalExcursionDays <= 0}>
+              {loading ? t('common.saving', 'Kaydediliyor...') : t('meals.saveExcursionDeduction', 'Gezileri Kaydet ve Düş')}
             </button>
           </div>
         </div>

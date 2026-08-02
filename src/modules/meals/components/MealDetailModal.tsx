@@ -1,5 +1,6 @@
 import { Modal } from '../../../core/components/Modal/Modal';
 import { CurrencyDisplay } from '../../../core/components/Typography/CurrencyDisplay';
+import { getExcursionsFromMeal } from '../types';
 import type { MealCalculation } from '../types';
 import { useExchangeRates } from '../../../core/contexts/ExchangeRatesContext';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +31,8 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
   if (meal.currency === 'SAR') { eqAmount = meal.total_amount / rate; eqCurrency = 'USD'; }
   else if (meal.currency === 'USD') { eqAmount = meal.total_amount * rate; eqCurrency = 'SAR'; }
 
-  const excursionDays = meal.excursion_days || 0;
+  const excursions = getExcursionsFromMeal(meal);
+  const excursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
   const grossDays = meal.total_days + excursionDays;
   const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
   const costPerDayAllPax = meal.pax_count * dailyPrice;
@@ -110,18 +112,18 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
           </div>
         </div>
 
-        {/* Excursion Card (If present) */}
-        {excursionDays > 0 ? (
+        {/* Excursions List Card */}
+        {excursions.length > 0 ? (
           <div style={{
             padding: '16px',
             backgroundColor: 'rgba(239, 68, 68, 0.06)',
             border: '1px solid rgba(239, 68, 68, 0.25)',
             borderRadius: '10px'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#DC2626', fontWeight: 700, fontSize: '14px' }}>
                 <Compass size={18} />
-                <span>⛺ {t('meals.excursionDetailsTitle', 'Gezi / Gün Düşüş Detayı')}</span>
+                <span>⛺ {t('meals.excursionDetailsTitle', 'Eklenen Geziler / Gün Düşüşleri')} ({excursions.length})</span>
               </div>
               <button
                 type="button"
@@ -129,38 +131,51 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
                 style={{ fontSize: '12px', color: '#8B5CF6', padding: '2px 8px', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderRadius: '4px' }}
                 onClick={() => { onClose(); onEditExcursion(meal); }}
               >
-                {t('meals.editExcursion', 'Geziyi Düzenle')}
+                {t('meals.editExcursions', 'Gezileri Yönet / Düzenle')}
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '13px' }}>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>{t('meals.excursionDates', 'Gezi Tarih Aralığı')}:</span>
-                <div style={{ fontWeight: 600 }}>
-                  {formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date)}
-                </div>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {excursions.map((ex, idx) => (
+                <div
+                  key={ex.id || idx}
+                  style={{
+                    padding: '10px 12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(239, 68, 68, 0.15)',
+                    display: 'flex',
+                    justify: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '13px'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#991B1B' }}>
+                      {ex.note || `${idx + 1}. Gezi`}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {formatDate(ex.start_date)} - {formatDate(ex.end_date)}
+                    </div>
+                  </div>
 
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>{t('meals.deductedDays', 'Düşülen Gün Sayısı')}:</span>
-                <div style={{ fontWeight: 700, color: '#DC2626' }}>
-                  -{excursionDays} {t('meals.daysUnit', 'gün')}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700, color: '#DC2626' }}>
+                      -{ex.days} gün
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#DC2626' }}>
+                      -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(ex.days * costPerDayAllPax)} {meal.currency}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
+            </div>
 
-              <div style={{ gridColumn: 'span 2' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{t('meals.excursionNote', 'Gezi Notu / Açıklama')}:</span>
-                <div style={{ fontWeight: 500, fontStyle: meal.excursion_note ? 'normal' : 'italic' }}>
-                  {meal.excursion_note || t('common.none', 'Belirtilmedi')}
-                </div>
-              </div>
-
-              <div style={{ gridColumn: 'span 2', marginTop: '4px', paddingTop: '8px', borderTop: '1px dashed rgba(239, 68, 68, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#DC2626', fontWeight: 600 }}>{t('meals.totalDeductedAmount', 'Düşülen Tutar')}:</span>
-                <span style={{ color: '#DC2626', fontWeight: 700, fontSize: '15px' }}>
-                  -{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency}
-                </span>
-              </div>
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed rgba(239, 68, 68, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: '#DC2626', fontWeight: 600 }}>{t('meals.totalDeductedAmount', 'Toplam Düşülen Tutar')}:</span>
+              <span style={{ color: '#DC2626', fontWeight: 700, fontSize: '15px' }}>
+                -{excursionDays} gün (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency})
+              </span>
             </div>
           </div>
         ) : (
@@ -207,7 +222,7 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
 
           {excursionDays > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#DC2626' }}>
-              <span>{t('meals.excursionDeduction', 'Gezi Düşüşü')}:</span>
+              <span>{t('meals.excursionDeduction', 'Geziler Düşüşü')}:</span>
               <span><strong>-{excursionDays}</strong> gün (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency})</span>
             </div>
           )}

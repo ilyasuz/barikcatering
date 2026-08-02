@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { MealCalculation } from '../types';
+import { getExcursionsFromMeal } from '../types';
 import { useExchangeRates } from '../../../core/contexts/ExchangeRatesContext';
 import { useTranslation } from 'react-i18next';
 
@@ -20,8 +21,10 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
 
   // Calculate totals
   const totalNetDays = meals.reduce((sum, m) => sum + m.total_days, 0);
-  const totalExcursionDays = meals.reduce((sum, m) => sum + (m.excursion_days || 0), 0);
-  const totalGrossDays = totalNetDays + totalExcursionDays;
+  const totalExcursionDays = meals.reduce((sum, m) => {
+    const exs = getExcursionsFromMeal(m);
+    return sum + exs.reduce((exSum, ex) => exSum + (ex.days || 0), 0);
+  }, 0);
   
   // Aggregate amounts by currency
   const totalsByCurrency: Record<string, number> = {};
@@ -74,7 +77,8 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
         </thead>
         <tbody>
           {meals.map((meal, index) => {
-            const excursionDays = meal.excursion_days || 0;
+            const excursions = getExcursionsFromMeal(meal);
+            const excursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
             const grossDays = meal.total_days + excursionDays;
             const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
             const costPerDayAllPax = meal.pax_count * dailyPrice;
@@ -93,19 +97,15 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                 <td style={{ border: "1px solid black", padding: "6px", fontWeight: "bold" }}>{meal.pax_count}</td>
                 <td style={{ border: "1px solid black", padding: "6px", fontWeight: "bold" }}>{grossDays}</td>
                 <td style={{ border: "1px solid black", padding: "6px", color: excursionDays > 0 ? "#dc2626" : "inherit", backgroundColor: excursionDays > 0 ? "#fef2f2" : "transparent" }}>
-                  {excursionDays > 0 ? (
-                    <div>
+                  {excursions.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <strong>-{excursionDays} Gün</strong>
-                      {meal.excursion_note && (
-                        <div style={{ fontSize: "11px", fontWeight: "bold", color: "#991b1b", marginTop: "1px" }}>
-                          {meal.excursion_note}
+                      {excursions.map((ex, i) => (
+                        <div key={i} style={{ fontSize: "10px", marginTop: "1px" }}>
+                          {ex.note ? <strong>{ex.note}: </strong> : ''}
+                          -{ex.days}g ({formatDate(ex.start_date)} - {formatDate(ex.end_date || ex.start_date)})
                         </div>
-                      )}
-                      {meal.excursion_start_date && (
-                        <div style={{ fontSize: "10px", color: "#4b5563" }}>
-                          ({formatDate(meal.excursion_start_date)} - {formatDate(meal.excursion_end_date || meal.excursion_start_date)})
-                        </div>
-                      )}
+                      ))}
                       <div style={{ fontSize: "10px", fontWeight: "bold", color: "#dc2626" }}>
                         (-{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(deductionAmount)} {meal.currency})
                       </div>
