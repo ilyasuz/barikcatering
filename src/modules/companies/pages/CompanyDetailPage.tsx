@@ -246,37 +246,65 @@ export function CompanyDetailPage() {
     const totalPaid = isMusteri ? debtToThem : debtToUs;
     const remaining = Math.abs(currentBalance);
 
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
+    const isSelectedMonthFilter = selectedMonth !== 'all';
+    let targetYear = new Date().getFullYear();
+    let targetMonth = new Date().getMonth();
+    if (isSelectedMonthFilter) {
+      const [yearStr, monthStr] = selectedMonth.split('-');
+      targetYear = parseInt(yearStr);
+      targetMonth = parseInt(monthStr) - 1;
+    }
+
     const currentMonthAdvances = currentExpenses
       .filter(e => {
-        const cat = (e.category || '').toLowerCase();
-        return (cat.includes('avans') || cat.includes('personel ödemesi')) && new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear;
+        const d = new Date(e.date);
+        const isAdv = isAdvanceOrTediye(e.category, e.description);
+        if (!isAdv) return false;
+        return isSelectedMonthFilter
+          ? (d.getFullYear() === targetYear && d.getMonth() === targetMonth)
+          : (d.getFullYear() === new Date().getFullYear() && d.getMonth() === new Date().getMonth());
       })
       .reduce((sum, e) => sum + e.amount, 0);
+
     const remainingSalaryThisMonth = (record.monthlySalary || 0) - currentMonthAdvances;
+
+    let priorMonthTxEffect = 0;
+    if (isSelectedMonthFilter) {
+      if (record.type === 'Personel' && record.monthlySalary) {
+        const priorMonthExpenses = currentExpenses.filter(e => {
+          const d = new Date(e.date);
+          return d.getFullYear() < targetYear || (d.getFullYear() === targetYear && d.getMonth() < targetMonth);
+        });
+
+        const priorMonthsSet = new Set(priorMonthExpenses.map(e => {
+          const d = new Date(e.date);
+          return `${d.getFullYear()}-${d.getMonth()}`;
+        }));
+
+        const priorAdvancesSum = priorMonthExpenses
+          .filter(e => isAdvanceOrTediye(e.category, e.description))
+          .reduce((sum, e) => sum + e.amount, 0);
+
+        const priorSalaryAccrualSum = priorMonthsSet.size * record.monthlySalary;
+        priorMonthTxEffect = priorAdvancesSum - priorSalaryAccrualSum;
+      } else {
+        allTx.forEach(tx => {
+          const d = new Date(tx.date);
+          const y = d.getFullYear();
+          const m = d.getMonth();
+          if (y < targetYear || (y === targetYear && m < targetMonth)) {
+            priorMonthTxEffect += tx.effect;
+          }
+        });
+      }
+    }
 
     // --- Print / Display Data Preparation ---
     const initialBaseBal = (record.type === 'Personel' && record.monthlySalary && expAccruals === 0) ? -record.monthlySalary : 0;
-    let printRunBal = initialBaseBal;
+    let printRunBal = initialBaseBal + priorMonthTxEffect;
     let printFilteredTx = allTx;
-    let priorMonthTxEffect = 0;
     
-    if (selectedMonth !== 'all') {
-      const [yearStr, monthStr] = selectedMonth.split('-');
-      const targetYear = parseInt(yearStr);
-      const targetMonth = parseInt(monthStr) - 1;
-      
-      allTx.forEach(tx => {
-        const d = new Date(tx.date);
-        const y = d.getFullYear();
-        const m = d.getMonth();
-        if (y < targetYear || (y === targetYear && m < targetMonth)) {
-          priorMonthTxEffect += tx.effect;
-        }
-      });
-      
-      printRunBal = initialBaseBal + priorMonthTxEffect;
+    if (isSelectedMonthFilter) {
       printFilteredTx = allTx.filter(tx => {
         const d = new Date(tx.date);
         return d.getFullYear() === targetYear && d.getMonth() === targetMonth;
@@ -299,7 +327,8 @@ export function CompanyDetailPage() {
       currentMonthAdvances,
       remainingSalaryThisMonth,
       printData,
-      printInitialBal: priorMonthTxEffect
+      printInitialBal: priorMonthTxEffect,
+      selectedMonthEndBalance: printRunBal
     };
   };
 
@@ -537,10 +566,21 @@ export function CompanyDetailPage() {
             )}
             
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '20px', borderLeft: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '2px' }}>{t('companies.generalBalance', 'Genel Bakiye')}</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: l.data.isOweUs ? '#10B981' : l.data.isWeOwe ? '#EF4444' : 'var(--text-primary)' }}>
-                <CurrencyDisplay amount={l.data.remaining} currency={l.currency} />
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                {record.type === 'Personel' && selectedMonth !== 'all' ? t('companies.monthEndBalance', 'Ay Sonu Net Bakiye') : t('companies.generalBalance', 'Genel Bakiye')}
               </div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: (record.type === 'Personel' ? l.data.selectedMonthEndBalance > 0 : l.data.isOweUs) ? '#EF4444' : (record.type === 'Personel' ? l.data.selectedMonthEndBalance < 0 : l.data.isWeOwe) ? '#10B981' : 'var(--text-primary)' }}>
+                <CurrencyDisplay amount={record.type === 'Personel' ? Math.abs(l.data.selectedMonthEndBalance) : l.data.remaining} currency={l.currency} />
+              </div>
+              {record.type === 'Personel' && (
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {l.data.selectedMonthEndBalance < 0
+                    ? `(${t('companies.remainingSalary', 'Kalan Maaş')})`
+                    : l.data.selectedMonthEndBalance > 0
+                    ? `(${t('companies.excessAdvance', 'Fazla Avans')})`
+                    : `(${t('companies.salaryCompleted', 'Maaş Tamamlandı')})`}
+                </div>
+              )}
             </div>
           </div>
         ))}
