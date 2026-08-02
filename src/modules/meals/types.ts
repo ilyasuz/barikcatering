@@ -6,6 +6,11 @@ export interface MealExcursion {
   note?: string;
 }
 
+export interface DailyPaxRecord {
+  date: string;
+  pax: number;
+}
+
 export interface MealCalculation {
   id: string;
   company_id: string;
@@ -31,6 +36,10 @@ export interface MealCalculation {
   excursion_days?: number;
   excursion_note?: string;
   excursions?: MealExcursion[];
+
+  // variable pax fields
+  is_variable_pax?: boolean;
+  daily_pax?: DailyPaxRecord[];
 
   // joined from companies
   company_name?: string;
@@ -58,6 +67,9 @@ export interface CreateMealCalculationDTO {
   excursion_days?: number;
   excursion_note?: string;
   excursions?: MealExcursion[];
+
+  is_variable_pax?: boolean;
+  daily_pax?: DailyPaxRecord[];
 }
 
 export function getExcursionsFromMeal(meal: Partial<MealCalculation>): MealExcursion[] {

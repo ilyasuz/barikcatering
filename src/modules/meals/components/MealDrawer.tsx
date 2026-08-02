@@ -18,10 +18,9 @@ interface MealDrawerProps {
 export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDrawerProps) {
   const { t } = useTranslation();
   const { rates } = useExchangeRates();
-  const [customRate, setCustomRate] = useState<number>(0);
-  const [companies, setCompanies] = useState<{ id: string, name: string, region: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isVariablePax, setIsVariablePax] = useState(false);
+  const [dailyPaxList, setDailyPaxList] = useState<{ date: string; pax: number }[]>([]);
+  const [bulkPaxVal, setBulkPaxVal] = useState<number>(50);
 
   const currentRate = customRate > 0 ? customRate : (rates['SAR'] || 3.75);
 
@@ -46,6 +45,8 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
   useEffect(() => {
     if (isOpen) {
       loadCompanies();
+      setIsVariablePax(false);
+      setDailyPaxList([]);
       setFormData({
         company_id: '',
         hotel_name: '',
@@ -68,14 +69,38 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
     }
   }, [isOpen, initialRegion]);
 
+  // Generate date list whenever dates change
   useEffect(() => {
-    // Auto calculate
+    if (!formData.entry_date || !formData.exit_date) return;
+    const sDate = new Date(formData.entry_date);
+    const eDate = new Date(formData.exit_date);
+    if (isNaN(sDate.getTime()) || isNaN(eDate.getTime()) || eDate < sDate) return;
+
+    const dates: string[] = [];
+    let cur = new Date(sDate);
+    while (cur <= eDate) {
+      dates.push(cur.toISOString().split('T')[0]);
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    setDailyPaxList(prev => {
+      const prevMap = new Map(prev.map(p => [p.date, p.pax]));
+      const defaultPax = formData.pax_count > 0 ? formData.pax_count : 50;
+      return dates.map(d => ({
+        date: d,
+        pax: prevMap.has(d) ? (prevMap.get(d) || 0) : defaultPax
+      }));
+    });
+  }, [formData.entry_date, formData.exit_date]);
+
+  useEffect(() => {
     calculateTotals();
   }, [
     formData.entry_date, formData.exit_date, 
     formData.entry_morning, formData.entry_evening, 
     formData.exit_morning, formData.exit_evening,
-    formData.pax_count, formData.morning_price, formData.evening_price
+    formData.pax_count, formData.morning_price, formData.evening_price,
+    formData.excursion_days, isVariablePax, dailyPaxList
   ]);
 
   const loadCompanies = async () => {
@@ -99,19 +124,44 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
                + formData.entry_morning + formData.entry_evening 
                + formData.exit_morning + formData.exit_evening;
 
-    const pax = formData.pax_count || 0;
     const mp = formData.morning_price || 0;
     const ep = formData.evening_price || 0;
-
+    const dailyPrice = mp + ep;
     const excursionDays = formData.excursion_days || 0;
     const netDays = Math.max(0, grossDays - excursionDays);
-    const totalAmount = netDays * pax * (mp + ep);
+
+    let totalAmount = 0;
+    let effectivePax = formData.pax_count || 0;
+
+    if (isVariablePax && dailyPaxList.length > 0) {
+      const totalPaxSum = dailyPaxList.reduce((sum, d) => sum + (d.pax || 0), 0);
+      effectivePax = Math.round(totalPaxSum / dailyPaxList.length);
+      const grossAmount = dailyPaxList.reduce((sum, d) => sum + (d.pax || 0) * dailyPrice, 0);
+      const avgPaxCost = effectivePax * dailyPrice;
+      const deductionAmount = excursionDays * avgPaxCost;
+      totalAmount = Math.max(0, grossAmount - deductionAmount);
+    } else {
+      totalAmount = netDays * effectivePax * dailyPrice;
+    }
 
     setFormData(prev => ({
       ...prev,
+      pax_count: effectivePax,
       total_days: netDays,
-      total_amount: totalAmount
+      total_amount: totalAmount,
+      is_variable_pax: isVariablePax,
+      daily_pax: isVariablePax ? dailyPaxList : undefined
     }));
+  };
+
+  const handleApplyFirstDayPaxToAll = () => {
+    if (dailyPaxList.length === 0) return;
+    const firstPax = dailyPaxList[0].pax || 50;
+    setDailyPaxList(prev => prev.map(p => ({ ...p, pax: firstPax })));
+  };
+
+  const handleApplyBulkPaxToAll = () => {
+    setDailyPaxList(prev => prev.map(p => ({ ...p, pax: bulkPaxVal || 0 })));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,13 +297,91 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('meals.paxCount', 'Kişi Sayısı')}</label>
-            <FormattedNumberInput
-              className="form-control"
-              value={formData.pax_count}
-              onChange={val => setFormData({ ...formData, pax_count: val })}
-            />
+          {/* Pax Mode Selection (Fixed vs Daily Variable) */}
+          <div style={{ marginTop: '16px', marginBottom: '16px', backgroundColor: 'var(--bg-secondary)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: 'var(--text-primary)' }}>
+              {t('meals.paxModeTitle', 'Kişi Sayısı Modu')}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className={!isVariablePax ? 'btn-primary' : 'btn-secondary'}
+                style={{ flex: 1, padding: '8px 12px', fontSize: '13px', fontWeight: 600 }}
+                onClick={() => setIsVariablePax(false)}
+              >
+                🔵 {t('meals.fixedPax', 'Sabit Kişi Sayısı')}
+              </button>
+              <button
+                type="button"
+                className={isVariablePax ? 'btn-primary' : 'btn-secondary'}
+                style={{ flex: 1, padding: '8px 12px', fontSize: '13px', fontWeight: 600, backgroundColor: isVariablePax ? '#8B5CF6' : undefined, borderColor: isVariablePax ? '#8B5CF6' : undefined }}
+                onClick={() => setIsVariablePax(true)}
+              >
+                🟣 {t('meals.variablePax', 'Günlük Değişken Kişi')}
+              </button>
+            </div>
+
+            {!isVariablePax ? (
+              <div className="form-group" style={{ marginTop: '12px', marginBottom: 0 }}>
+                <label className="form-label">{t('meals.paxCount', 'Kişi Sayısı')}</label>
+                <FormattedNumberInput
+                  className="form-control"
+                  value={formData.pax_count}
+                  onChange={val => setFormData({ ...formData, pax_count: val })}
+                />
+              </div>
+            ) : (
+              <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(139, 92, 246, 0.08)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#8B5CF6' }}>
+                    ⚡ {t('meals.bulkApplyTitle', 'Pratik Doldurma')}
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '11px', padding: '3px 8px' }}
+                      onClick={handleApplyFirstDayPaxToAll}
+                      title={t('meals.applyFirstDayTooltip', '1. günün kişi sayısını tüm günlere kopyalar')}
+                    >
+                      {t('meals.applyFirstDay', '1. Günü Tümüne Uygula')}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                  {dailyPaxList.map((item, idx) => (
+                    <div
+                      key={item.date || idx}
+                      style={{
+                        display: 'flex',
+                        justify: 'space-between',
+                        alignItems: 'center',
+                        padding: '6px 12px',
+                        backgroundColor: 'var(--bg-primary)',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <div>
+                        <strong>{idx + 1}. Gün</strong> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>({new Date(item.date).toLocaleDateString('tr-TR')})</span>
+                      </div>
+                      <div style={{ width: '120px' }}>
+                        <FormattedNumberInput
+                          className="form-control"
+                          style={{ padding: '4px 8px', fontSize: '13px', textAlign: 'right' }}
+                          value={item.pax}
+                          onChange={val => {
+                            setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, pax: val } : p));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-row">
