@@ -12,9 +12,8 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
-  // Update display value when prop value changes from outside (e.g. initial load)
+  // Update display value when prop value changes from outside (e.g. initial load or external state update)
   useEffect(() => {
-    // Kullanıcı yazarken müdahale etmemek için sadece input odakta değilken güncelle
     if (!isFocused) {
       if (value !== undefined && value !== null) {
         if (value === 0 && displayValue === '') {
@@ -32,17 +31,22 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let rawValue = e.target.value;
+
+    // Eğer nokta var ve virgül yoksa, noktayı virgüle çevir (numpad ve İngilizce klavye desteği)
+    if (rawValue.includes('.') && !rawValue.includes(',')) {
+      rawValue = rawValue.replace(/\./g, ',');
+    } else {
+      // Binlik ayraç olan noktaları temizle
+      rawValue = rawValue.replace(/\./g, '');
+    }
     
-    // Sadece rakam, nokta ve virgüle izin ver
-    rawValue = rawValue.replace(/[^0-9.,]/g, '');
-    
-    // Gelen metindeki binlik ayraç olan noktaları tamamen temizle
-    rawValue = rawValue.replace(/\./g, '');
+    // Sadece rakam ve virgüle izin ver
+    rawValue = rawValue.replace(/[^0-9,]/g, '');
     
     // Virgül (ondalık ayraç) kontrolü
     const parts = rawValue.split(',');
     let integerPart = parts[0];
-    let decimalPart = parts.length > 1 ? parts[1] : null;
+    let decimalPart = parts.length > 1 ? parts.slice(1).join('') : null;
 
     if (!integerPart && decimalPart === null) {
       setDisplayValue('');
@@ -51,11 +55,8 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
     }
 
     if (integerPart) {
-      // Sayıya çevirerek baştaki fazla sıfırları at, sonra tekrar string yap
       const parsedInt = parseInt(integerPart, 10);
       integerPart = isNaN(parsedInt) ? '0' : parsedInt.toString();
-      
-      // Binlik ayraç (nokta) ekle
       integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     } else {
       integerPart = '0';
@@ -63,7 +64,6 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
 
     let finalDisplay = integerPart;
     
-    // Eğer kullanıcı virgül girdiyse, küsürat kısmını ekle
     if (decimalPart !== null) {
       // En fazla 2 ondalık basamağa izin ver
       decimalPart = decimalPart.substring(0, 2);
@@ -72,7 +72,7 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
 
     setDisplayValue(finalDisplay);
 
-    // JS için noktalı ondalık (float) formata çevirip state'e gönder
+    // JS için float formata çevir
     const numericString = finalDisplay.replace(/\./g, '').replace(',', '.');
     const numericValue = parseFloat(numericString);
     onChange(isNaN(numericValue) ? 0 : numericValue);
@@ -88,7 +88,6 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
       onFocus={() => setIsFocused(true)}
       onBlur={() => {
         setIsFocused(false);
-        // İsteğe bağlı: Blur olduğunda eğer sadece "1500," yazıldıysa son virgülü temizle
         if (displayValue.endsWith(',')) {
           setDisplayValue(displayValue.slice(0, -1));
         }

@@ -187,7 +187,7 @@ export function ExcursionModal({ isOpen, onClose, meal, onSuccess }: ExcursionMo
             <FormattedNumberInput
               className="form-control"
               value={excursionDays}
-              onChange={val => setExcursionDays(Math.max(0, Math.min(grossDays, val)))}
+              onChange={val => setExcursionDays(val)}
               required
             />
           </div>
