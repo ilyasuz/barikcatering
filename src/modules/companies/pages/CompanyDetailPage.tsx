@@ -257,9 +257,10 @@ export function CompanyDetailPage() {
     const remainingSalaryThisMonth = (record.monthlySalary || 0) - currentMonthAdvances;
 
     // --- Print / Display Data Preparation ---
-    let printRunBal = 0;
+    const initialBaseBal = (record.type === 'Personel' && record.monthlySalary && expAccruals === 0) ? -record.monthlySalary : 0;
+    let printRunBal = initialBaseBal;
     let printFilteredTx = allTx;
-    let printInitialBal = 0;
+    let printInitialBal = initialBaseBal;
     
     if (selectedMonth !== 'all') {
       const [yearStr, monthStr] = selectedMonth.split('-');
@@ -758,11 +759,21 @@ export function CompanyDetailPage() {
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                               <CurrencyDisplay amount={Math.abs(runBal)} currency={tx.currency as any} />
                             </div>
-                            {runBal !== 0 && (
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                {runBal > 0 ? `(${t('companies.weAreCreditor', 'Biz Alacaklıyız')})` : `(${record.type} ${t('companies.creditor', 'Alacaklı')})`}
-                              </div>
-                            )}
+                            <div style={{ fontSize: '11px', color: runBal === 0 ? 'var(--success)' : 'var(--text-muted)', marginTop: '2px' }}>
+                              {record.type === 'Personel' ? (
+                                runBal < 0
+                                  ? `(${t('companies.remainingSalary', 'Kalan Maaş')})`
+                                  : runBal > 0
+                                  ? `(${t('companies.excessAdvance', 'Fazla Avans / Biz Alacaklıyız')})`
+                                  : `(${t('companies.salaryCompleted', 'Maaş Tamamlandı')})`
+                              ) : (
+                                runBal > 0 
+                                  ? `(${t('companies.weAreCreditor', 'Biz Alacaklıyız')})` 
+                                  : runBal < 0 
+                                  ? `(${t('companies.theyAreCreditor', 'Karşı Taraf Alacaklı')})`
+                                  : `(${t('companies.balanceClosed', 'Bakiye Kapalı')})`
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
