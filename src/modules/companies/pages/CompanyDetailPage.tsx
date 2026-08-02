@@ -861,7 +861,14 @@ export function CompanyDetailPage() {
                       <tr key={`tfoot-${l.currency}`}>
                         <td colSpan={2} style={{ padding: '14px 24px' }}>
                           <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
-                            {isAll ? t('companies.overallSummary', 'TÜM ZAMANLAR GENEL TOPLAMI') : t('companies.selectedMonthSummary', 'SEÇİLİ AY TOPLAMI')}
+                            {(() => {
+                              if (isAll) return t('companies.overallSummary', 'TÜM ZAMANLAR GENEL TOPLAMI');
+                              const [yStr, mStr] = selectedMonth.split('-');
+                              const dObj = new Date(parseInt(yStr), parseInt(mStr) - 1, 1);
+                              const mName = dObj.toLocaleDateString('tr-TR', { month: 'long' });
+                              const formatted = mName.charAt(0).toUpperCase() + mName.slice(1);
+                              return `${formatted} Ayı Toplamı`;
+                            })()}
                           </div>
                         </td>
                         <td style={{ padding: '14px 24px', textAlign: 'right' }}>
