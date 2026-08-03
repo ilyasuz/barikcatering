@@ -317,10 +317,10 @@ export async function exportMealToExcel(
       nextRow++;
     }
 
-    // Grand Totals Row
+    // Grand Totals Row 1: Pax Sums & Amount Sum
     const totRow = worksheet.getRow(nextRow);
     totRow.values = [
-      'GENEL TOPLAM / الإجمالي',
+      'TOPLAM KİŞİ SAYILARI / (عدد الأشخاص)',
       '',
       '',
       grandMorningPaxSum,
@@ -338,6 +338,35 @@ export async function exportMealToExcel(
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBgColor } };
       cell.border = defaultBorder;
       if (i === 8) cell.numFmt = `#,##0.00 "${meal.currency}"`;
+    }
+
+    // Grand Totals Row 2: Price Subtotals Directly Under Morning Pax & Evening Pax!
+    nextRow++;
+    const priceTotRow = worksheet.getRow(nextRow);
+    const mPriceSub = grandMorningPaxSum * (meal.morning_price || 0);
+    const ePriceSub = grandEveningPaxSum * (meal.evening_price || 0);
+
+    priceTotRow.values = [
+      'ÖĞÜN FİYAT TOPLAMLARI / (المبالغ الإجمالية)',
+      '',
+      '',
+      mPriceSub,
+      ePriceSub,
+      '',
+      '',
+      grandAmountSum
+    ];
+    priceTotRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: '1E3A8A' } };
+    priceTotRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    priceTotRow.height = 28;
+
+    for (let i = 1; i <= 8; i++) {
+      const cell = priceTotRow.getCell(i);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
+      cell.border = defaultBorder;
+      if (i === 4 || i === 5 || i === 8) {
+        cell.numFmt = `#,##0.00 "${meal.currency}"`;
+      }
     }
   } else if (template === 'excursion') {
     // -------------------------------------------------------------
@@ -613,7 +642,21 @@ export async function exportBatchMealsToExcel(
   let totalExcursionDaysSum = 0;
   const totalsByCurrency: Record<string, number> = {};
 
+  let grandMorningPaxSum = 0;
+  let grandEveningPaxSum = 0;
+  let grandMorningAmountSum = 0;
+  let grandEveningAmountSum = 0;
+
   meals.forEach((meal, idx) => {
+    const { totalMorningPax, totalEveningPax } = calculateTotalPaxSums(meal);
+    const mSub = totalMorningPax * (meal.morning_price || 0);
+    const eSub = totalEveningPax * (meal.evening_price || 0);
+
+    grandMorningPaxSum += totalMorningPax;
+    grandEveningPaxSum += totalEveningPax;
+    grandMorningAmountSum += mSub;
+    grandEveningAmountSum += eSub;
+
     const excursions = getExcursionsFromMeal(meal);
     const totalExcursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
     const grossDays = meal.total_days + totalExcursionDays;
@@ -635,7 +678,7 @@ export async function exportBatchMealsToExcel(
       formatDate(meal.exit_date),
       meal.exit_morning > 0 ? 0.5 : '-',
       meal.exit_evening > 0 ? 0.5 : '-',
-      `S: ${calculateTotalPaxSums(meal).totalMorningPax} / A: ${calculateTotalPaxSums(meal).totalEveningPax}`,
+      `S: ${totalMorningPax} / A: ${totalEveningPax}`,
       grossDays,
       totalExcursionDays > 0 ? totalExcursionDays : '-',
       meal.morning_price,
@@ -660,17 +703,18 @@ export async function exportBatchMealsToExcel(
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accentRedBg } };
       }
     }
+    row.getCell(14).note = `Sabah Öğün Tutarı: ${mSub.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${meal.currency}\nAkşam Öğün Tutarı: ${eSub.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${meal.currency}`;
     nextRow++;
   });
 
-  // Grand Total Summary Row
+  // Grand Total Summary Row 1 (Pax Sums)
   const totalSummaryText = Object.entries(totalsByCurrency)
     .map(([curr, amt]) => `${amt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${curr}`)
     .join(' | ');
 
   const totRow = worksheet.getRow(nextRow);
   totRow.values = [
-    'GENEL TOPLAM / الإجمالي',
+    'GENEL TOPLAM KİŞİ SAYILARI / (الإجمالي)',
     '',
     '',
     '',
@@ -678,7 +722,7 @@ export async function exportBatchMealsToExcel(
     '',
     '',
     '',
-    totalPaxSum,
+    `S: ${grandMorningPaxSum} / A: ${grandEveningPaxSum}`,
     totalGrossDaysSum,
     totalExcursionDaysSum > 0 ? totalExcursionDaysSum : '-',
     '',
@@ -693,6 +737,30 @@ export async function exportBatchMealsToExcel(
     const cell = totRow.getCell(i);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBgColor } };
     cell.border = defaultBorder;
+  }
+
+  // Grand Total Summary Row 2 (Price Subtotals)
+  nextRow++;
+  const priceTotRow = worksheet.getRow(nextRow);
+  priceTotRow.values = [
+    'GENEL ÖĞÜN TUTARLARI KIRILIMI',
+    '', '', '', '', '', '', '',
+    '', '', '',
+    grandMorningAmountSum,
+    grandEveningAmountSum,
+    totalSummaryText
+  ];
+  priceTotRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: '1E3A8A' } };
+  priceTotRow.alignment = { horizontal: 'center', vertical: 'middle' };
+  priceTotRow.height = 28;
+
+  for (let i = 1; i <= 14; i++) {
+    const cell = priceTotRow.getCell(i);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
+    cell.border = defaultBorder;
+    if (i === 12 || i === 13) {
+      cell.numFmt = `#,##0.00`;
+    }
   }
 
   if (template === 'corporate') {
