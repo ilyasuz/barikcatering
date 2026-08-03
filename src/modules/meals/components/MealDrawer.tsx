@@ -145,15 +145,29 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
     if (isVariablePax && dailyPaxList.length > 0) {
       let grossAmount = 0;
       let totalPaxSum = 0;
+      const len = dailyPaxList.length;
 
-      dailyPaxList.forEach(d => {
+      dailyPaxList.forEach((d, idx) => {
+        let mMult = 1;
+        let eMult = 1;
+
+        if (idx === 0) {
+          mMult = formData.entry_morning > 0 ? 1 : 0;
+          eMult = formData.entry_evening > 0 ? 1 : 0;
+        }
+        if (idx === len - 1) {
+          mMult = formData.exit_morning > 0 ? 1 : 0;
+          eMult = formData.exit_evening > 0 ? 1 : 0;
+        }
+
         const mPax = d.morning_pax ?? d.pax ?? formData.pax_count ?? 0;
         const ePax = d.evening_pax ?? d.pax ?? formData.pax_count ?? 0;
-        totalPaxSum += (mPax + ePax);
-        grossAmount += (mPax * mp) + (ePax * ep);
+
+        totalPaxSum += (mPax * mMult) + (ePax * eMult);
+        grossAmount += (mPax * mMult * mp) + (ePax * eMult * ep);
       });
 
-      effectivePax = Math.round(totalPaxSum / (2 * dailyPaxList.length));
+      effectivePax = Math.round(totalPaxSum / Math.max(1, 2 * len));
       const avgPaxCost = effectivePax * dailyPrice;
       const deductionAmount = excursionDays * avgPaxCost;
       totalAmount = Math.max(0, grossAmount - deductionAmount);
