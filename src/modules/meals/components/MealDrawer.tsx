@@ -203,7 +203,7 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
       isOpen={isOpen}
       onClose={onClose}
       title={t('meals.newMealCalculation', 'Yeni Yemek Hesabı')}
-      width="600px"
+      width="700px"
     >
       <form onSubmit={handleSubmit} className="form-layout">
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
@@ -376,7 +376,7 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
                   </div>
                 </div>
 
-                <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                <div style={{ maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
                   {dailyPaxList.map((item, idx) => (
                     <div
                       key={item.date || idx}
@@ -384,44 +384,41 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
                         display: 'flex',
                         justify: 'space-between',
                         alignItems: 'center',
-                        padding: '8px 12px',
+                        padding: '6px 12px',
                         backgroundColor: 'var(--bg-primary)',
                         borderRadius: '6px',
                         border: '1px solid var(--border-color)',
-                        fontSize: '13px'
+                        fontSize: '13px',
+                        gap: '12px'
                       }}
                     >
-                      <div style={{ minWidth: '120px' }}>
-                        <strong>{idx + 1}. Gün</strong> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>({new Date(item.date).toLocaleDateString('tr-TR')})</span>
+                      <div style={{ whiteSpace: 'nowrap', fontWeight: 600, fontSize: '13px' }}>
+                        {idx + 1}. Gün <span style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 400 }}>({new Date(item.date).toLocaleDateString('tr-TR')})</span>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>🌅 Sabah:</span>
-                          <div style={{ width: '80px' }}>
-                            <FormattedNumberInput
-                              className="form-control"
-                              style={{ padding: '4px 6px', fontSize: '13px', textAlign: 'right' }}
-                              value={item.morning_pax}
-                              onChange={val => {
-                                setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, morning_pax: val } : p));
-                              }}
-                            />
-                          </div>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>🌅 Sabah:</span>
+                          <FormattedNumberInput
+                            className="form-control"
+                            style={{ height: '32px', padding: '0 8px', fontSize: '13px', textAlign: 'right', width: '75px' }}
+                            value={item.morning_pax}
+                            onChange={val => {
+                              setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, morning_pax: val } : p));
+                            }}
+                          />
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>🌃 Akşam:</span>
-                          <div style={{ width: '80px' }}>
-                            <FormattedNumberInput
-                              className="form-control"
-                              style={{ padding: '4px 6px', fontSize: '13px', textAlign: 'right' }}
-                              value={item.evening_pax}
-                              onChange={val => {
-                                setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, evening_pax: val } : p));
-                              }}
-                            />
-                          </div>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>🌃 Akşam:</span>
+                          <FormattedNumberInput
+                            className="form-control"
+                            style={{ height: '32px', padding: '0 8px', fontSize: '13px', textAlign: 'right', width: '75px' }}
+                            value={item.evening_pax}
+                            onChange={val => {
+                              setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, evening_pax: val } : p));
+                            }}
+                          />
                         </div>
                       </div>
                     </div>

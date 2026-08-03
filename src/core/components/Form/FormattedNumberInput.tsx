@@ -6,9 +6,10 @@ interface FormattedNumberInputProps {
   className?: string;
   placeholder?: string;
   required?: boolean;
+  style?: React.CSSProperties;
 }
 
-export function FormattedNumberInput({ value, onChange, className, placeholder, required }: FormattedNumberInputProps) {
+export function FormattedNumberInput({ value, onChange, className, placeholder, required, style }: FormattedNumberInputProps) {
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
@@ -82,6 +83,7 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
     <input
       type="text"
       className={className}
+      style={style}
       placeholder={placeholder}
       value={displayValue}
       onChange={handleChange}
