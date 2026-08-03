@@ -48,7 +48,7 @@ export function Login({ onLogin }: LoginProps) {
       
       <div className="login-card">
         <div className="login-header">
-          <img src="/logo.png" alt="Barik Muhasebe Logo" style={{ width: '80px', height: '80px', borderRadius: '16px', marginBottom: '12px', objectFit: 'contain', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }} />
+          <img src="/logo.png" alt="Barik Muhasebe Logo" style={{ width: '110px', height: '110px', borderRadius: '20px', marginBottom: '16px', objectFit: 'contain', boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }} />
           <h2>{t('login.title', 'Barik Muhasebe')}</h2>
           <p className="text-muted">{t('login.subtitle', 'Sisteme giriş yapmak için bilgilerinizi girin.')}</p>
         </div>
