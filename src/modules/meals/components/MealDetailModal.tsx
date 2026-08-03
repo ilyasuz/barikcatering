@@ -36,7 +36,18 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
   const grossDays = meal.total_days + excursionDays;
   const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
   const costPerDayAllPax = meal.pax_count * dailyPrice;
-  const grossAmount = grossDays * costPerDayAllPax;
+
+  let grossAmount = 0;
+  if (meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0) {
+    meal.daily_pax.forEach(d => {
+      const mPax = d.morning_pax ?? d.pax ?? meal.pax_count;
+      const ePax = d.evening_pax ?? d.pax ?? meal.pax_count;
+      grossAmount += (mPax * (meal.morning_price || 0)) + (ePax * (meal.evening_price || 0));
+    });
+  } else {
+    grossAmount = grossDays * costPerDayAllPax;
+  }
+
   const deductionAmount = excursionDays * costPerDayAllPax;
 
   return (
@@ -105,7 +116,9 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
 
           <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{t('meals.paxAndPrice', 'Kişi & Fiyat')}</span>
-            <div style={{ fontWeight: 600, fontSize: '14px', marginTop: '2px' }}>{meal.pax_count} Pax</div>
+            <div style={{ fontWeight: 600, fontSize: '14px', marginTop: '2px', color: meal.is_variable_pax ? '#8B5CF6' : 'inherit' }}>
+              {meal.is_variable_pax ? `~${meal.pax_count} Pax (Ort.)` : `${meal.pax_count} Pax`}
+            </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
               S: {meal.morning_price} | A: {meal.evening_price} {meal.currency}
             </div>
