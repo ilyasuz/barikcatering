@@ -1,6 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import type { MealCalculation } from '../../modules/meals/types';
-import { getExcursionsFromMeal } from '../../modules/meals/types';
+import { getExcursionsFromMeal, calculateTotalPaxSums } from '../../modules/meals/types';
 
 export type MealExportTemplate = 'standard' | 'daily' | 'excursion' | 'corporate';
 
@@ -120,7 +120,7 @@ export async function exportMealToExcel(
       formatDate(meal.exit_date),
       meal.exit_morning > 0 ? 0.5 : '-',
       meal.exit_evening > 0 ? 0.5 : '-',
-      meal.pax_count,
+      `S: ${calculateTotalPaxSums(meal).totalMorningPax} / A: ${calculateTotalPaxSums(meal).totalEveningPax}`,
       grossDays,
       totalExcursionDays > 0 ? totalExcursionDays : '-',
       meal.morning_price,
@@ -630,7 +630,7 @@ export async function exportBatchMealsToExcel(
       formatDate(meal.exit_date),
       meal.exit_morning > 0 ? 0.5 : '-',
       meal.exit_evening > 0 ? 0.5 : '-',
-      meal.pax_count,
+      `S: ${calculateTotalPaxSums(meal).totalMorningPax} / A: ${calculateTotalPaxSums(meal).totalEveningPax}`,
       grossDays,
       totalExcursionDays > 0 ? totalExcursionDays : '-',
       meal.morning_price,

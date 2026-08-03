@@ -8,7 +8,7 @@ import { DataTable } from '../../../core/components/DataTable/DataTable';
 import { CurrencyDisplay } from '../../../core/components/Typography/CurrencyDisplay';
 import { mealApi } from '../api';
 import type { MealCalculation } from '../types';
-import { getExcursionsFromMeal } from '../types';
+import { getExcursionsFromMeal, calculateTotalPaxSums } from '../types';
 import { MealDrawer } from '../components/MealDrawer';
 import { ExcursionModal } from '../components/ExcursionModal';
 import { MealDetailModal } from '../components/MealDetailModal';
@@ -140,7 +140,20 @@ export function MealsPage() {
     { key: 'otel', header: t('meals.hotel', 'Otel'), width: '15%', render: (row: MealCalculation) => row.hotel_name },
     { key: 'giris', header: t('meals.checkIn', 'Giriş'), width: '11%', render: (row: MealCalculation) => formatDate(row.entry_date) },
     { key: 'cikis', header: t('meals.checkOut', 'Çıkış'), width: '11%', render: (row: MealCalculation) => formatDate(row.exit_date) },
-    { key: 'kisi', header: t('meals.pax', 'Kişi'), width: '7%', render: (row: MealCalculation) => row.pax_count },
+    { 
+      key: 'kisi', 
+      header: t('meals.pax', 'Kişi (Sabah / Akşam)'), 
+      width: '11%', 
+      render: (row: MealCalculation) => {
+        const { totalMorningPax, totalEveningPax } = calculateTotalPaxSums(row);
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+            <div style={{ color: '#DC2626', fontWeight: 600 }}>🌅 S: {totalMorningPax.toLocaleString('tr-TR')}</div>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>🌃 A: {totalEveningPax.toLocaleString('tr-TR')}</div>
+          </div>
+        );
+      }
+    },
     { 
       key: 'gun', 
       header: t('meals.days', 'Gün'), 

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import type { MealCalculation } from '../types';
-import { getExcursionsFromMeal } from '../types';
+import { getExcursionsFromMeal, calculateTotalPaxSums } from '../types';
 import type { MealExportTemplate } from '../../../core/utils/mealExcelExport';
 import { useTranslation } from 'react-i18next';
 
@@ -121,7 +121,10 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                       <td style={{ border: '1px solid black', padding: '6px' }}>{formatDate(meal.exit_date)}</td>
                       <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
                       <td style={{ border: '1px solid black', padding: '6px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
-                      <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>{meal.pax_count}</td>
+                      <td style={{ border: '1px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                        <div style={{ color: '#DC2626' }}>S: {calculateTotalPaxSums(meal).totalMorningPax}</div>
+                        <div>A: {calculateTotalPaxSums(meal).totalEveningPax}</div>
+                      </td>
                       <td style={{ border: '1px solid black', padding: '6px' }}>{grossDays} Gün</td>
                       <td style={{ border: '1px solid black', padding: '6px', backgroundColor: excDays > 0 ? '#FEF2F2' : 'transparent', color: excDays > 0 ? '#DC2626' : 'black', fontWeight: excDays > 0 ? 'bold' : 'normal' }}>
                         {excDays > 0 ? `${excDays} Gün` : '-'}
