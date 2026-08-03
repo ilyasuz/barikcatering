@@ -103,8 +103,9 @@ export const MealTemplatePrintView = forwardRef<HTMLDivElement, MealTemplatePrin
                   <td style={{ border: '1px solid black', padding: '8px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_morning > 0 ? '0,5' : '-'}</td>
                   <td style={{ border: '1px solid black', padding: '8px', color: '#dc2626', fontWeight: 'bold' }}>{meal.exit_evening > 0 ? '0,5' : '-'}</td>
                   <td style={{ border: '1px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                    <div style={{ color: '#DC2626' }}>S: {calculateTotalPaxSums(meal).totalMorningPax}</div>
-                    <div>A: {calculateTotalPaxSums(meal).totalEveningPax}</div>
+                    <div style={{ fontSize: '12px', color: '#1F2937' }}>{meal.is_variable_pax ? `~${meal.pax_count} Pax` : `${meal.pax_count} Pax`}</div>
+                    <div style={{ color: '#DC2626', fontSize: '10px' }}>S: {calculateTotalPaxSums(meal).totalMorningPax}</div>
+                    <div style={{ color: '#4B5563', fontSize: '10px' }}>A: {calculateTotalPaxSums(meal).totalEveningPax}</div>
                   </td>
                   <td style={{ border: '1px solid black', padding: '8px' }}>{grossDays} Gün</td>
                   <td style={{ border: '1px solid black', padding: '8px', backgroundColor: totalExcursionDays > 0 ? '#FEF2F2' : 'transparent', color: totalExcursionDays > 0 ? '#DC2626' : 'black', fontWeight: totalExcursionDays > 0 ? 'bold' : 'normal' }}>

@@ -106,11 +106,14 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
           </div>
 
           <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{t('meals.paxAndPrice', 'Toplam Kişi Sayıları')}</span>
-            <div style={{ fontWeight: 700, fontSize: '13px', marginTop: '2px', display: 'flex', gap: '6px' }}>
-              <span style={{ color: '#DC2626' }}>🌅 S: {calculateTotalPaxSums(meal).totalMorningPax.toLocaleString('tr-TR')}</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{t('meals.paxAndPrice', 'Kişi Sayısı & Öğünler')}</span>
+            <div style={{ fontWeight: 700, fontSize: '14px', marginTop: '2px', color: meal.is_variable_pax ? '#8B5CF6' : 'inherit' }}>
+              {meal.is_variable_pax ? `~${meal.pax_count} Pax (Değişken Ort.)` : `${meal.pax_count} Pax`}
+            </div>
+            <div style={{ fontSize: '11px', marginTop: '4px', display: 'flex', gap: '6px' }}>
+              <span style={{ color: '#DC2626', fontWeight: 600 }}>🌅 S: {calculateTotalPaxSums(meal).totalMorningPax.toLocaleString('tr-TR')}</span>
               <span style={{ color: 'var(--text-muted)' }}>|</span>
-              <span style={{ color: 'var(--text-primary)' }}>🌃 A: {calculateTotalPaxSums(meal).totalEveningPax.toLocaleString('tr-TR')}</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>🌃 A: {calculateTotalPaxSums(meal).totalEveningPax.toLocaleString('tr-TR')}</span>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
               Fiyat: S: {meal.morning_price} | A: {meal.evening_price} {meal.currency}

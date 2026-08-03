@@ -142,14 +142,17 @@ export function MealsPage() {
     { key: 'cikis', header: t('meals.checkOut', 'Çıkış'), width: '11%', render: (row: MealCalculation) => formatDate(row.exit_date) },
     { 
       key: 'kisi', 
-      header: t('meals.pax', 'Kişi (Sabah / Akşam)'), 
+      header: t('meals.pax', 'Kişi Sayısı'), 
       width: '11%', 
       render: (row: MealCalculation) => {
         const { totalMorningPax, totalEveningPax } = calculateTotalPaxSums(row);
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
-            <div style={{ color: '#DC2626', fontWeight: 600 }}>🌅 S: {totalMorningPax.toLocaleString('tr-TR')}</div>
-            <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>🌃 A: {totalEveningPax.toLocaleString('tr-TR')}</div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+              {row.is_variable_pax ? `~${row.pax_count} Pax (Değişken)` : `${row.pax_count} Pax`}
+            </div>
+            <div style={{ color: '#DC2626', fontSize: '11px', fontWeight: 600 }}>🌅 S: {totalMorningPax.toLocaleString('tr-TR')}</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600 }}>🌃 A: {totalEveningPax.toLocaleString('tr-TR')}</div>
           </div>
         );
       }
