@@ -228,6 +228,16 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>🌅 Sabah Öğün Toplamı ({paxSums.totalMorningPax} Pax × {mp} {meal.currency}):</span>
+            <span style={{ color: '#DC2626', fontWeight: 600 }}>{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(paxSums.totalMorningPax * mp)} {meal.currency}</span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>🌃 Akşam Öğün Toplamı ({paxSums.totalEveningPax} Pax × {ep} {meal.currency}):</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(paxSums.totalEveningPax * ep)} {meal.currency}</span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
             <span style={{ color: 'var(--text-muted)' }}>{t('meals.grossDays', 'Brüt Konaklama Süresi')}:</span>
             <span><strong>{grossDays}</strong> gün ({new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(grossAmount)} {meal.currency})</span>
           </div>

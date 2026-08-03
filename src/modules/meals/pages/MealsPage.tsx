@@ -181,10 +181,16 @@ export function MealsPage() {
     },
     { 
       key: 'tutar',
-      header: t('meals.amount', 'Tutar'), 
-      width: '12%',
+      header: t('meals.amount', 'Tutar (Öğün Detaylı)'), 
+      width: '14%',
       align: 'right' as const,
       render: (row: MealCalculation) => {
+        const { totalMorningPax, totalEveningPax } = calculateTotalPaxSums(row);
+        const mp = row.morning_price || 0;
+        const ep = row.evening_price || 0;
+        const mSubtotal = totalMorningPax * mp;
+        const eSubtotal = totalEveningPax * ep;
+
         const rate = rates['SAR'] || 3.75;
         let eqAmount = 0;
         let eqCurrency = '';
@@ -192,10 +198,23 @@ export function MealsPage() {
         else if (row.currency === 'USD') { eqAmount = row.total_amount * rate; eqCurrency = 'SAR'; }
 
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-            <div style={{ fontWeight: 600 }}><CurrencyDisplay amount={row.total_amount} currency={row.currency} /></div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+            <div style={{ fontWeight: 700, fontSize: '14px' }}>
+              <CurrencyDisplay amount={row.total_amount} currency={row.currency} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', fontSize: '11px' }}>
+              <span style={{ color: '#DC2626', fontWeight: 600 }}>
+                🌅 S: {new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(mSubtotal)}
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                🌃 A: {new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(eSubtotal)}
+              </span>
+            </div>
+
             {eqAmount > 0 && (
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                 ~ {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(eqAmount)} {eqCurrency}
               </div>
             )}
