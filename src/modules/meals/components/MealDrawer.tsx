@@ -175,9 +175,17 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
       let mMealCount = 0;
       let eMealCount = 0;
 
-      if (diffDays <= 0) {
-        mMealCount = (formData.entry_morning > 0 || formData.exit_morning > 0) ? 1 : 0;
-        eMealCount = (formData.entry_evening > 0 || formData.exit_evening > 0) ? 1 : 0;
+      if (diffDays <= 0 || grossDays <= 0.5) {
+        if (formData.entry_morning > 0 || formData.exit_morning > 0) {
+          mMealCount = 1;
+          eMealCount = 0;
+        } else if (formData.entry_evening > 0 || formData.exit_evening > 0) {
+          mMealCount = 0;
+          eMealCount = 1;
+        } else {
+          mMealCount = 1;
+          eMealCount = 0;
+        }
       } else {
         const calendarDays = diffDays + 1;
         mMealCount = (formData.entry_morning > 0 ? 1 : 0) + Math.max(0, calendarDays - 2) + (formData.exit_morning > 0 ? 1 : 0);

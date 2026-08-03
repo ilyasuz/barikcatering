@@ -144,12 +144,20 @@ export function calculateTotalPaxSums(meal: Partial<MealCalculation>): { totalMo
     let mMealCount = 0;
     let eMealCount = 0;
 
-    if (dayCount === 1) {
-      mMealCount = (entryMorning > 0 || exitMorning > 0) ? 1 : 0;
-      eMealCount = (entryEvening > 0 || exitEvening > 0) ? 1 : 0;
+    if (dayCount <= 1 || (meal.total_days && meal.total_days <= 0.5)) {
+      if (entryMorning > 0 || exitMorning > 0) {
+        mMealCount = 1;
+        eMealCount = 0;
+      } else if (entryEvening > 0 || exitEvening > 0) {
+        mMealCount = 0;
+        eMealCount = 1;
+      } else {
+        mMealCount = 1;
+        eMealCount = 0;
+      }
     } else {
-      mMealCount = (entryMorning > 0 ? 1 : 0) + (dayCount - 2) + (exitMorning > 0 ? 1 : 0);
-      eMealCount = (entryEvening > 0 ? 1 : 0) + (dayCount - 2) + (exitEvening > 0 ? 1 : 0);
+      mMealCount = (entryMorning > 0 ? 1 : 0) + Math.max(0, dayCount - 2) + (exitMorning > 0 ? 1 : 0);
+      eMealCount = (entryEvening > 0 ? 1 : 0) + Math.max(0, dayCount - 2) + (exitEvening > 0 ? 1 : 0);
     }
 
     totalMorningPax = paxCount * mMealCount;
