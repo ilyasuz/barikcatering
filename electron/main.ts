@@ -16,13 +16,20 @@ process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
 });
 
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.barik.muhasebe');
+}
+
 function createWindow() {
+  const iconPath = path.join(__dirname, '../public/logo.png');
+  const winIconPath = path.join(__dirname, '../build/icon.ico');
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 850,
     minWidth: 1024,
     minHeight: 700,
-    icon: path.join(__dirname, '../public/logo.png'),
+    icon: process.platform === 'win32' ? winIconPath : iconPath,
     ...(process.platform === 'win32'
       ? { backgroundMaterial: 'acrylic' }
       : { backgroundColor: '#00000000', transparent: true }),
