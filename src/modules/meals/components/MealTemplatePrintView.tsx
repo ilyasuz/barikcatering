@@ -410,7 +410,7 @@ export const MealTemplatePrintView = forwardRef<HTMLDivElement, MealTemplatePrin
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', backgroundColor: '#D1FAE5', color: '#065F46', fontSize: '14px', fontWeight: 'bold' }}>
                 <span>NET ÖDENECEK TUTAR (الصافي):</span>
-                <span>{meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}</span>
+                <span>{(Math.max(0, grossAmount - deductionAmount)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}</span>
               </div>
             </div>
           </div>

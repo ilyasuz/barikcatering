@@ -33,13 +33,26 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
 
   const excursions = getExcursionsFromMeal(meal);
   const excursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
-  const grossDays = meal.total_days + excursionDays;
-  const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
-  const paxSums = calculateTotalPaxSums(meal);
+  
+  // Calendar Days calculation
+  const start = new Date(meal.entry_date);
+  const end = new Date(meal.exit_date);
+  let calDays = 0;
+  if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+    calDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  }
+  const grossDays = (meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0)
+    ? meal.daily_pax.length
+    : Math.max(1, calDays);
+
   const mp = meal.morning_price || 0;
   const ep = meal.evening_price || 0;
+  const dailyPrice = mp + ep;
+  const paxSums = calculateTotalPaxSums(meal);
   const grossAmount = (paxSums.totalMorningPax * mp) + (paxSums.totalEveningPax * ep);
+  const costPerDayAllPax = meal.pax_count * dailyPrice;
   const deductionAmount = excursionDays * meal.pax_count * dailyPrice;
+  const calculatedNet = Math.max(0, grossAmount - deductionAmount);
 
   return (
     <Modal
@@ -258,7 +271,7 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
             <span style={{ fontWeight: 700, fontSize: '14px' }}>{t('meals.netPayableTotal', 'Ödenecek Net Tutar')}:</span>
             <div style={{ textAlign: 'right' }}>
               <div style={{ color: 'var(--success)', fontWeight: 700, fontSize: '18px' }}>
-                <CurrencyDisplay amount={meal.total_amount} currency={meal.currency} />
+                <CurrencyDisplay amount={calculatedNet} currency={meal.currency} />
               </div>
               {eqAmount > 0 && (
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>

@@ -194,16 +194,23 @@ export function MealsPage() {
         const mSubtotal = totalMorningPax * mp;
         const eSubtotal = totalEveningPax * ep;
 
+        const excursions = getExcursionsFromMeal(row);
+        const excursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
+        const dailyPrice = mp + ep;
+        const grossAmount = mSubtotal + eSubtotal;
+        const deductionAmount = excursionDays * row.pax_count * dailyPrice;
+        const calculatedNet = Math.max(0, grossAmount - deductionAmount);
+
         const rate = rates['SAR'] || 3.75;
         let eqAmount = 0;
         let eqCurrency = '';
-        if (row.currency === 'SAR') { eqAmount = row.total_amount / rate; eqCurrency = 'USD'; }
-        else if (row.currency === 'USD') { eqAmount = row.total_amount * rate; eqCurrency = 'SAR'; }
+        if (row.currency === 'SAR') { eqAmount = calculatedNet / rate; eqCurrency = 'USD'; }
+        else if (row.currency === 'USD') { eqAmount = calculatedNet * rate; eqCurrency = 'SAR'; }
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
             <div style={{ fontWeight: 700, fontSize: '14px' }}>
-              <CurrencyDisplay amount={row.total_amount} currency={row.currency} />
+              <CurrencyDisplay amount={calculatedNet} currency={row.currency} />
             </div>
 
             <div style={{ display: 'flex', gap: '6px', fontSize: '11px' }}>
