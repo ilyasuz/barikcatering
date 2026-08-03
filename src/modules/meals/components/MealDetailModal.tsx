@@ -35,20 +35,11 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
   const excursionDays = excursions.reduce((sum, item) => sum + (item.days || 0), 0);
   const grossDays = meal.total_days + excursionDays;
   const dailyPrice = (meal.morning_price || 0) + (meal.evening_price || 0);
-  const costPerDayAllPax = meal.pax_count * dailyPrice;
-
-  let grossAmount = 0;
-  if (meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0) {
-    meal.daily_pax.forEach(d => {
-      const mPax = d.morning_pax ?? d.pax ?? meal.pax_count;
-      const ePax = d.evening_pax ?? d.pax ?? meal.pax_count;
-      grossAmount += (mPax * (meal.morning_price || 0)) + (ePax * (meal.evening_price || 0));
-    });
-  } else {
-    grossAmount = grossDays * costPerDayAllPax;
-  }
-
-  const deductionAmount = excursionDays * costPerDayAllPax;
+  const paxSums = calculateTotalPaxSums(meal);
+  const mp = meal.morning_price || 0;
+  const ep = meal.evening_price || 0;
+  const grossAmount = (paxSums.totalMorningPax * mp) + (paxSums.totalEveningPax * ep);
+  const deductionAmount = excursionDays * meal.pax_count * dailyPrice;
 
   return (
     <Modal

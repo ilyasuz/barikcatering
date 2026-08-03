@@ -172,7 +172,21 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
       const deductionAmount = excursionDays * avgPaxCost;
       totalAmount = Math.max(0, grossAmount - deductionAmount);
     } else {
-      totalAmount = netDays * effectivePax * dailyPrice;
+      let mMealCount = 0;
+      let eMealCount = 0;
+
+      if (diffDays <= 0) {
+        mMealCount = (formData.entry_morning > 0 || formData.exit_morning > 0) ? 1 : 0;
+        eMealCount = (formData.entry_evening > 0 || formData.exit_evening > 0) ? 1 : 0;
+      } else {
+        const calendarDays = diffDays + 1;
+        mMealCount = (formData.entry_morning > 0 ? 1 : 0) + Math.max(0, calendarDays - 2) + (formData.exit_morning > 0 ? 1 : 0);
+        eMealCount = (formData.entry_evening > 0 ? 1 : 0) + Math.max(0, calendarDays - 2) + (formData.exit_evening > 0 ? 1 : 0);
+      }
+
+      const grossAmount = (effectivePax * mMealCount * mp) + (effectivePax * eMealCount * ep);
+      const deductionAmount = excursionDays * effectivePax * dailyPrice;
+      totalAmount = Math.max(0, grossAmount - deductionAmount);
     }
 
     setFormData(prev => ({

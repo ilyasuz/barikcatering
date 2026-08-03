@@ -138,12 +138,22 @@ export function calculateTotalPaxSums(meal: Partial<MealCalculation>): { totalMo
         dayCount++;
       }
     } else {
-      dayCount = (meal.total_days || 1) + 1;
+      dayCount = Math.max(1, Math.round(meal.total_days || 1));
     }
-    const mDays = Math.max(0, dayCount - 1 + (entryMorning > 0 ? 0.5 : 0) + (exitMorning > 0 ? 0.5 : 0));
-    const eDays = Math.max(0, dayCount - 1 + (entryEvening > 0 ? 0.5 : 0) + (exitEvening > 0 ? 0.5 : 0));
-    totalMorningPax = Math.round(paxCount * mDays);
-    totalEveningPax = Math.round(paxCount * eDays);
+
+    let mMealCount = 0;
+    let eMealCount = 0;
+
+    if (dayCount === 1) {
+      mMealCount = (entryMorning > 0 || exitMorning > 0) ? 1 : 0;
+      eMealCount = (entryEvening > 0 || exitEvening > 0) ? 1 : 0;
+    } else {
+      mMealCount = (entryMorning > 0 ? 1 : 0) + (dayCount - 2) + (exitMorning > 0 ? 1 : 0);
+      eMealCount = (entryEvening > 0 ? 1 : 0) + (dayCount - 2) + (exitEvening > 0 ? 1 : 0);
+    }
+
+    totalMorningPax = paxCount * mMealCount;
+    totalEveningPax = paxCount * eMealCount;
   }
 
   return { totalMorningPax, totalEveningPax };
