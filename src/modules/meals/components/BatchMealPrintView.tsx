@@ -208,20 +208,20 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜN NO</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>TARİH</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜN</th>
-                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>KİŞİ SAYISI (PAX)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px', color: '#FCA5A5' }}>SABAH PAX</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>AKŞAM PAX</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>SABAH FİYAT</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>AKŞAM FİYAT</th>
-                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜNLÜK BİRİM FİYAT</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>GÜNLÜK TOPLAM TUTAR</th>
                       </tr>
                       <tr style={{ backgroundColor: '#4B5563', color: '#E5E7EB', fontWeight: 'bold' }} dir="rtl">
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(رقم اليوم)</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(التاريخ)</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(اليوم)</th>
-                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(عدد الأشخاص)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(عدد أشخاص الصباح)</th>
+                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(عدد أشخاص المساء)</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(سعر الصباح)</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(سعر المساء)</th>
-                        <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(السعر اليومي)</th>
                         <th style={{ border: '1px solid #D1D5DB', padding: '4px' }}>(المبلغ اليومي الإجمالي)</th>
                       </tr>
                     </thead>
@@ -229,20 +229,28 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                       {(() => {
                         const rows = [];
                         let dayCount = 1;
+                        let mealMorningPaxSum = 0;
+                        let mealEveningPaxSum = 0;
 
                         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                           const dateStr = d.toISOString().split('T')[0];
-                          let paxForDay = meal.pax_count;
+                          let mPax = meal.pax_count;
+                          let ePax = meal.pax_count;
+
                           if (meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0) {
                             const found = meal.daily_pax.find(p => p.date === dateStr);
-                            if (found && found.pax !== undefined) paxForDay = found.pax;
+                            if (found) {
+                              mPax = found.morning_pax ?? found.pax ?? meal.pax_count;
+                              ePax = found.evening_pax ?? found.pax ?? meal.pax_count;
+                            }
                           }
 
                           const dayNameTr = d.toLocaleDateString('tr-TR', { weekday: 'long' });
                           const dayNameAr = d.toLocaleDateString('ar-SA', { weekday: 'long' });
-                          const dailyTotal = paxForDay * dailyPrice;
+                          const dailyTotal = (mPax * (meal.morning_price || 0)) + (ePax * (meal.evening_price || 0));
 
-                          mealPaxSum += paxForDay;
+                          mealMorningPaxSum += mPax;
+                          mealEveningPaxSum += ePax;
                           mealAmountSum += dailyTotal;
 
                           rows.push(
@@ -250,10 +258,10 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                               <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>{dayCount}. Gün</td>
                               <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{formatDate(dateStr)}</td>
                               <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{dayNameTr} / {dayNameAr}</td>
-                              <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>{paxForDay}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold', color: '#DC2626' }}>{mPax}</td>
+                              <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>{ePax}</td>
                               <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{meal.morning_price} {meal.currency}</td>
                               <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{meal.evening_price} {meal.currency}</td>
-                              <td style={{ border: '1px solid #D1D5DB', padding: '4px' }}>{dailyPrice} {meal.currency}</td>
                               <td style={{ border: '1px solid #D1D5DB', padding: '4px', fontWeight: 'bold' }}>
                                 {dailyTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
                               </td>
@@ -267,8 +275,9 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                             <td colSpan={3} style={{ border: '1px solid #D1D5DB', padding: '6px', textAlign: 'right' }}>
                               HESAP TOPLAMI / إجمالي المجموعة:
                             </td>
-                            <td style={{ border: '1px solid #D1D5DB', padding: '6px' }}>{mealPaxSum}</td>
-                            <td colSpan={3} style={{ border: '1px solid #D1D5DB', padding: '6px' }}>-</td>
+                            <td style={{ border: '1px solid #D1D5DB', padding: '6px', color: '#DC2626' }}>{mealMorningPaxSum}</td>
+                            <td style={{ border: '1px solid #D1D5DB', padding: '6px' }}>{mealEveningPaxSum}</td>
+                            <td colSpan={2} style={{ border: '1px solid #D1D5DB', padding: '6px' }}>-</td>
                             <td style={{ border: '1px solid #D1D5DB', padding: '6px', color: '#059669', fontSize: '13px' }}>
                               {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
                             </td>

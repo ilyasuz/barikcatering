@@ -226,8 +226,8 @@ export async function exportMealToExcel(
     // Daily Table Headers (Row 6 TR, Row 7 AR)
     const headerTr = worksheet.getRow(6);
     headerTr.values = [
-      'GÜN NO', 'TARİH', 'GÜN', 'KİŞİ SAYISI (PAX)',
-      'SABAH FİYAT', 'AKŞAM FİYAT', 'GÜNLÜK BİRİM FİYAT', 'GÜNLÜK TOPLAM TUTAR'
+      'GÜN NO', 'TARİH', 'GÜN', 'SABAH PAX', 'AKŞAM PAX',
+      'SABAH FİYAT', 'AKŞAM FİYAT', 'GÜNLÜK TOPLAM TUTAR'
     ];
     headerTr.font = { name: 'Arial', size: 10, bold: true, color: { argb: headerTextColor } };
     headerTr.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -241,8 +241,8 @@ export async function exportMealToExcel(
 
     const headerAr = worksheet.getRow(7);
     headerAr.values = [
-      '(رقم اليوم)', '(التاريخ)', '(اليوم)', '(عدد الأشخاص)',
-      '(سعر الصباح)', '(سعر المساء)', '(السعر اليومي)', '(المبلغ اليومي الإجمالي)'
+      '(رقم اليوم)', '(التاريخ)', '(اليوم)', '(عدد أشخاص الصباح)', '(عدد أشخاص المساء)',
+      '(سعر الصباح)', '(سعر المساء)', '(المبلغ اليومي الإجمالي)'
     ];
     headerAr.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'E5E7EB' } };
     headerAr.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -258,22 +258,29 @@ export async function exportMealToExcel(
     const start = new Date(meal.entry_date);
     const end = new Date(meal.exit_date);
     let dayCount = 1;
-    let grandPaxSum = 0;
+    let grandMorningPaxSum = 0;
+    let grandEveningPaxSum = 0;
     let grandAmountSum = 0;
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
-      let paxForDay = meal.pax_count;
+      let mPax = meal.pax_count;
+      let ePax = meal.pax_count;
+
       if (meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0) {
         const found = meal.daily_pax.find(p => p.date === dateStr);
-        if (found && found.pax !== undefined) paxForDay = found.pax;
+        if (found) {
+          mPax = found.morning_pax ?? found.pax ?? meal.pax_count;
+          ePax = found.evening_pax ?? found.pax ?? meal.pax_count;
+        }
       }
 
       const dayNameTr = d.toLocaleDateString('tr-TR', { weekday: 'long' });
       const dayNameAr = d.toLocaleDateString('ar-SA', { weekday: 'long' });
-      const dailyTotal = paxForDay * dailyPrice;
+      const dailyTotal = (mPax * (meal.morning_price || 0)) + (ePax * (meal.evening_price || 0));
 
-      grandPaxSum += paxForDay;
+      grandMorningPaxSum += mPax;
+      grandEveningPaxSum += ePax;
       grandAmountSum += dailyTotal;
 
       const r = worksheet.getRow(nextRow);
@@ -281,10 +288,10 @@ export async function exportMealToExcel(
         `${dayCount}. Gün`,
         formatDate(dateStr),
         `${dayNameTr} / ${dayNameAr}`,
-        paxForDay,
+        mPax,
+        ePax,
         meal.morning_price,
         meal.evening_price,
-        dailyPrice,
         dailyTotal
       ];
       r.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -293,7 +300,7 @@ export async function exportMealToExcel(
       for (let i = 1; i <= 8; i++) {
         const cell = r.getCell(i);
         cell.border = defaultBorder;
-        if (i === 5 || i === 6 || i === 7 || i === 8) {
+        if (i === 6 || i === 7 || i === 8) {
           cell.numFmt = `#,##0.00 "${meal.currency}"`;
         }
         if (nextRow % 2 === 1) {
@@ -311,8 +318,8 @@ export async function exportMealToExcel(
       'GENEL TOPLAM / الإجمالي',
       '',
       '',
-      grandPaxSum,
-      '',
+      grandMorningPaxSum,
+      grandEveningPaxSum,
       '',
       '',
       grandAmountSum

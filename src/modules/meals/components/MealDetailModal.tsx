@@ -113,7 +113,7 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
         </div>
 
         {/* Excursions List Card */}
-        {excursions.length > 0 ? (
+        {excursions.length > 0 && (
           <div style={{
             padding: '16px',
             backgroundColor: 'rgba(239, 68, 68, 0.06)',
@@ -178,25 +178,31 @@ export function MealDetailModal({ isOpen, onClose, meal, onPrint, onEditExcursio
               </span>
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* Daily Variable Pax Breakdown Card */}
+        {meal.is_variable_pax && meal.daily_pax && meal.daily_pax.length > 0 && (
           <div style={{
-            padding: '12px 16px',
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '8px',
-            border: '1px dashed var(--border-color)',
-            display: 'flex',
-            justify: 'space-between',
-            alignItems: 'center'
+            padding: '14px',
+            backgroundColor: 'rgba(139, 92, 246, 0.06)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            borderRadius: '10px'
           }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('meals.noExcursionAdded', 'Bu kayıtta henüz bir gezi düşüşü yok.')}</span>
-            <button
-              type="button"
-              className="btn-text"
-              style={{ fontSize: '12px', color: '#8B5CF6', padding: '4px 10px', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderRadius: '6px' }}
-              onClick={() => { onClose(); onEditExcursion(meal); }}
-            >
-              + {t('meals.addExcursion', 'Gezi Ekle')}
-            </button>
+            <div style={{ fontWeight: 600, fontSize: '13px', color: '#8B5CF6', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🟣 {t('meals.variablePaxDetailTitle', 'Gün Gün Değişken Kişi Sayıları (Sabah / Akşam)')}</span>
+            </div>
+            <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {meal.daily_pax.map((d, idx) => {
+                const mPax = d.morning_pax ?? d.pax ?? meal.pax_count;
+                const ePax = d.evening_pax ?? d.pax ?? meal.pax_count;
+                return (
+                  <div key={d.date || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '4px 8px', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                    <span><strong>{idx + 1}. Gün</strong> ({formatDate(d.date)})</span>
+                    <span>🌅 Sabah: <strong>{mPax}</strong> | 🌃 Akşam: <strong>{ePax}</strong></span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

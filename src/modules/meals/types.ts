@@ -8,7 +8,9 @@ export interface MealExcursion {
 
 export interface DailyPaxRecord {
   date: string;
-  pax: number;
+  pax?: number;
+  morning_pax?: number;
+  evening_pax?: number;
 }
 
 export interface MealCalculation {

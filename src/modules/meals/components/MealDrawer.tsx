@@ -24,7 +24,7 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
   const [error, setError] = useState<string | null>(null);
 
   const [isVariablePax, setIsVariablePax] = useState(false);
-  const [dailyPaxList, setDailyPaxList] = useState<{ date: string; pax: number }[]>([]);
+  const [dailyPaxList, setDailyPaxList] = useState<{ date: string; pax?: number; morning_pax: number; evening_pax: number }[]>([]);
   const [bulkPaxVal, setBulkPaxVal] = useState<number>(50);
 
   const currentRate = customRate > 0 ? customRate : (rates['SAR'] || 3.75);
@@ -89,12 +89,16 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
     }
 
     setDailyPaxList(prev => {
-      const prevMap = new Map(prev.map(p => [p.date, p.pax]));
+      const prevMap = new Map(prev.map(p => [p.date, p]));
       const defaultPax = formData.pax_count > 0 ? formData.pax_count : 50;
-      return dates.map(d => ({
-        date: d,
-        pax: prevMap.has(d) ? (prevMap.get(d) || 0) : defaultPax
-      }));
+      return dates.map(d => {
+        const existing = prevMap.get(d);
+        return {
+          date: d,
+          morning_pax: existing ? (existing.morning_pax ?? existing.pax ?? defaultPax) : defaultPax,
+          evening_pax: existing ? (existing.evening_pax ?? existing.pax ?? defaultPax) : defaultPax
+        };
+      });
     });
   }, [formData.entry_date, formData.exit_date]);
 
@@ -139,9 +143,17 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
     let effectivePax = formData.pax_count || 0;
 
     if (isVariablePax && dailyPaxList.length > 0) {
-      const totalPaxSum = dailyPaxList.reduce((sum, d) => sum + (d.pax || 0), 0);
-      effectivePax = Math.round(totalPaxSum / dailyPaxList.length);
-      const grossAmount = dailyPaxList.reduce((sum, d) => sum + (d.pax || 0) * dailyPrice, 0);
+      let grossAmount = 0;
+      let totalPaxSum = 0;
+
+      dailyPaxList.forEach(d => {
+        const mPax = d.morning_pax ?? d.pax ?? formData.pax_count ?? 0;
+        const ePax = d.evening_pax ?? d.pax ?? formData.pax_count ?? 0;
+        totalPaxSum += (mPax + ePax);
+        grossAmount += (mPax * mp) + (ePax * ep);
+      });
+
+      effectivePax = Math.round(totalPaxSum / (2 * dailyPaxList.length));
       const avgPaxCost = effectivePax * dailyPrice;
       const deductionAmount = excursionDays * avgPaxCost;
       totalAmount = Math.max(0, grossAmount - deductionAmount);
@@ -161,12 +173,13 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
 
   const handleApplyFirstDayPaxToAll = () => {
     if (dailyPaxList.length === 0) return;
-    const firstPax = dailyPaxList[0].pax || 50;
-    setDailyPaxList(prev => prev.map(p => ({ ...p, pax: firstPax })));
+    const firstMPax = dailyPaxList[0].morning_pax ?? dailyPaxList[0].pax ?? 50;
+    const firstEPax = dailyPaxList[0].evening_pax ?? dailyPaxList[0].pax ?? 50;
+    setDailyPaxList(prev => prev.map(p => ({ ...p, morning_pax: firstMPax, evening_pax: firstEPax })));
   };
 
-  const handleApplyBulkPaxToAll = () => {
-    setDailyPaxList(prev => prev.map(p => ({ ...p, pax: bulkPaxVal || 0 })));
+  const handleSyncMorningToEvening = () => {
+    setDailyPaxList(prev => prev.map(p => ({ ...p, evening_pax: p.morning_pax })));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -346,15 +359,24 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
                       type="button"
                       className="btn-secondary"
                       style={{ fontSize: '11px', padding: '3px 8px' }}
+                      onClick={handleSyncMorningToEvening}
+                      title="Sabah sayılarını Akşam sayılarına kopyalar"
+                    >
+                      🔗 {t('meals.syncMorningToEvening', 'Sabah\'ı Akşam\'a Eşitle')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '11px', padding: '3px 8px' }}
                       onClick={handleApplyFirstDayPaxToAll}
-                      title={t('meals.applyFirstDayTooltip', '1. günün kişi sayısını tüm günlere kopyalar')}
+                      title={t('meals.applyFirstDayTooltip', '1. günün kişi sayılarını tüm günlere kopyalar')}
                     >
                       {t('meals.applyFirstDay', '1. Günü Tümüne Uygula')}
                     </button>
                   </div>
                 </div>
 
-                <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
                   {dailyPaxList.map((item, idx) => (
                     <div
                       key={item.date || idx}
@@ -362,25 +384,45 @@ export function MealDrawer({ isOpen, onClose, onSuccess, initialRegion }: MealDr
                         display: 'flex',
                         justify: 'space-between',
                         alignItems: 'center',
-                        padding: '6px 12px',
+                        padding: '8px 12px',
                         backgroundColor: 'var(--bg-primary)',
                         borderRadius: '6px',
                         border: '1px solid var(--border-color)',
                         fontSize: '13px'
                       }}
                     >
-                      <div>
+                      <div style={{ minWidth: '120px' }}>
                         <strong>{idx + 1}. Gün</strong> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>({new Date(item.date).toLocaleDateString('tr-TR')})</span>
                       </div>
-                      <div style={{ width: '120px' }}>
-                        <FormattedNumberInput
-                          className="form-control"
-                          style={{ padding: '4px 8px', fontSize: '13px', textAlign: 'right' }}
-                          value={item.pax}
-                          onChange={val => {
-                            setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, pax: val } : p));
-                          }}
-                        />
+
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>🌅 Sabah:</span>
+                          <div style={{ width: '80px' }}>
+                            <FormattedNumberInput
+                              className="form-control"
+                              style={{ padding: '4px 6px', fontSize: '13px', textAlign: 'right' }}
+                              value={item.morning_pax}
+                              onChange={val => {
+                                setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, morning_pax: val } : p));
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>🌃 Akşam:</span>
+                          <div style={{ width: '80px' }}>
+                            <FormattedNumberInput
+                              className="form-control"
+                              style={{ padding: '4px 6px', fontSize: '13px', textAlign: 'right' }}
+                              value={item.evening_pax}
+                              onChange={val => {
+                                setDailyPaxList(prev => prev.map((p, i) => i === idx ? { ...p, evening_pax: val } : p));
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
