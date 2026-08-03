@@ -124,6 +124,20 @@ export const MealTemplatePrintView = forwardRef<HTMLDivElement, MealTemplatePrin
                     </div>
                   </td>
                 </tr>
+                <tr style={{ backgroundColor: '#DBEAFE', color: '#1E3A8A', fontWeight: 'bold', fontSize: '12px' }}>
+                  <td colSpan={11} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>
+                    ÖĞÜN FİYAT TOPLAMLARI / (المبالغ الإجمالية):
+                  </td>
+                  <td style={{ border: '1px solid black', padding: '6px', color: '#DC2626' }}>
+                    S: {(calculateTotalPaxSums(meal).totalMorningPax * (meal.morning_price || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                  </td>
+                  <td style={{ border: '1px solid black', padding: '6px', color: '#1E3A8A' }}>
+                    A: {(calculateTotalPaxSums(meal).totalEveningPax * (meal.evening_price || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                  </td>
+                  <td style={{ border: '1px solid black', padding: '6px', fontSize: '13px', color: '#1E3A8A' }}>
+                    {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                  </td>
+                </tr>
               </tbody>
             </table>
 
@@ -251,15 +265,36 @@ export const MealTemplatePrintView = forwardRef<HTMLDivElement, MealTemplatePrin
                     dayCount++;
                   }
 
+                  const mPriceSub = grandMorningPaxSum * (meal.morning_price || 0);
+                  const ePriceSub = grandEveningPaxSum * (meal.evening_price || 0);
+
                   rows.push(
-                    <tr key="total" style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold', fontSize: '13px' }}>
+                    <tr key="total-pax" style={{ backgroundColor: '#1F2937', color: '#FFFFFF', fontWeight: 'bold', fontSize: '13px' }}>
                       <td colSpan={3} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>
-                        GENEL TOPLAM / الإجمالي
+                        TOPLAM KİŞİ SAYILARI / (عدد الأشخاص)
                       </td>
                       <td style={{ border: '1px solid black', padding: '8px', color: '#FCA5A5' }}>{grandMorningPaxSum}</td>
                       <td style={{ border: '1px solid black', padding: '8px' }}>{grandEveningPaxSum}</td>
                       <td colSpan={2} style={{ border: '1px solid black', padding: '8px' }}>-</td>
                       <td style={{ border: '1px solid black', padding: '8px', fontSize: '14px' }}>
+                        {grandAmountSum.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                      </td>
+                    </tr>
+                  );
+
+                  rows.push(
+                    <tr key="total-prices" style={{ backgroundColor: '#DBEAFE', color: '#1E3A8A', fontWeight: 'bold', fontSize: '12px' }}>
+                      <td colSpan={3} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>
+                        ÖĞÜN FİYAT TOPLAMLARI / (المبالغ الإجمالية)
+                      </td>
+                      <td style={{ border: '1px solid black', padding: '8px', color: '#DC2626' }}>
+                        {mPriceSub.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                      </td>
+                      <td style={{ border: '1px solid black', padding: '8px', color: '#1E3A8A' }}>
+                        {ePriceSub.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                      </td>
+                      <td colSpan={2} style={{ border: '1px solid black', padding: '8px' }}>-</td>
+                      <td style={{ border: '1px solid black', padding: '8px', fontSize: '13px', color: '#1E3A8A' }}>
                         {grandAmountSum.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
                       </td>
                     </tr>
