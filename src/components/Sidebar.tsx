@@ -41,8 +41,8 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="logo">
-          <Hexagon className="logo-icon" size={28} />
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src="/logo.png" alt="Barik Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
           <span className="logo-text">Barik</span>
         </div>
       </div>

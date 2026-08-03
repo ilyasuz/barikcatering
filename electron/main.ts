@@ -22,6 +22,7 @@ function createWindow() {
     height: 850,
     minWidth: 1024,
     minHeight: 700,
+    icon: path.join(__dirname, '../public/logo.png'),
     ...(process.platform === 'win32'
       ? { backgroundMaterial: 'acrylic' }
       : { backgroundColor: '#00000000', transparent: true }),
