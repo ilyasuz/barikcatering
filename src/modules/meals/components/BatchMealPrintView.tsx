@@ -132,7 +132,13 @@ export const BatchMealPrintView = forwardRef<HTMLDivElement, BatchMealPrintViewP
                       <td style={{ border: '1px solid black', padding: '6px' }}>{meal.morning_price} {meal.currency}</td>
                       <td style={{ border: '1px solid black', padding: '6px' }}>{meal.evening_price} {meal.currency}</td>
                       <td style={{ border: '1px solid black', padding: '6px', fontWeight: 'bold' }}>
-                        {meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}
+                        <div>{meal.total_amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {meal.currency}</div>
+                        <div style={{ fontSize: '10px', color: '#DC2626', marginTop: '2px' }}>
+                          S: {(calculateTotalPaxSums(meal).totalMorningPax * (meal.morning_price || 0)).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#4B5563' }}>
+                          A: {(calculateTotalPaxSums(meal).totalEveningPax * (meal.evening_price || 0)).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+                        </div>
                       </td>
                     </tr>
                   );

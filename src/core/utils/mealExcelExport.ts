@@ -109,6 +109,10 @@ export async function exportMealToExcel(
       cell.border = defaultBorder;
     });
 
+    const { totalMorningPax, totalEveningPax } = calculateTotalPaxSums(meal);
+    const mSub = totalMorningPax * (meal.morning_price || 0);
+    const eSub = totalEveningPax * (meal.evening_price || 0);
+
     // Data Row (Row 6)
     const dataRow = worksheet.getRow(6);
     dataRow.values = [
@@ -120,7 +124,7 @@ export async function exportMealToExcel(
       formatDate(meal.exit_date),
       meal.exit_morning > 0 ? 0.5 : '-',
       meal.exit_evening > 0 ? 0.5 : '-',
-      `S: ${calculateTotalPaxSums(meal).totalMorningPax} / A: ${calculateTotalPaxSums(meal).totalEveningPax}`,
+      `S: ${totalMorningPax} / A: ${totalEveningPax}`,
       grossDays,
       totalExcursionDays > 0 ? totalExcursionDays : '-',
       meal.morning_price,
@@ -142,6 +146,7 @@ export async function exportMealToExcel(
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accentRedBg } };
       }
     }
+    dataRow.getCell(14).note = `Sabah Öğün Tutarı: ${mSub.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${meal.currency}\nAkşam Öğün Tutarı: ${eSub.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${meal.currency}`;
 
     let nextRow = 8;
 
