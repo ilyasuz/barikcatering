@@ -396,6 +396,7 @@ export function Dashboard() {
                   ? `${stats.displaySymbol}${stats.totalIncomeBase.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                   : `${stats.displaySymbol}${stats.totalIncome.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 className="small-kpi"
+                equivalentStr={getEqStr(region === 'all' ? stats.totalIncomeBase : stats.totalIncome, stats.displayCurrency)}
                 trend={stats.trends.income.Total}
               >
                 <svg style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40px', opacity: 0.15, borderRadius: '0 0 var(--border-radius) var(--border-radius)' }} preserveAspectRatio="none" viewBox="0 0 100 40">
@@ -435,6 +436,7 @@ export function Dashboard() {
                   ? `${stats.displaySymbol}${stats.totalExpenseBase.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                   : `${stats.displaySymbol}${stats.totalExpense.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 className="small-kpi"
+                equivalentStr={getEqStr(region === 'all' ? stats.totalExpenseBase : stats.totalExpense, stats.displayCurrency)}
                 trend={stats.trends.expense.Total}
               >
                 <svg style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40px', opacity: 0.1, borderRadius: '0 0 var(--border-radius) var(--border-radius)' }} preserveAspectRatio="none" viewBox="0 0 100 40">
@@ -472,6 +474,7 @@ export function Dashboard() {
                   ? `${stats.displaySymbol}${stats.netProfitBase.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                   : `${stats.displaySymbol}${stats.netProfit.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 className="small-kpi"
+                equivalentStr={getEqStr(region === 'all' ? stats.netProfitBase : stats.netProfit, stats.displayCurrency)}
                 trend={{
                   value: (region === 'all' ? stats.totalIncomeBase : stats.totalIncome) > 0 ? Math.round(((region === 'all' ? Math.abs(stats.netProfitBase) : Math.abs(stats.netProfit)) / (region === 'all' ? stats.totalIncomeBase : stats.totalIncome)) * 100) : 0,
                   label: t('reports.profitMargin', 'Kâr Marjı'),
@@ -513,6 +516,7 @@ export function Dashboard() {
                   ? `${stats.displaySymbol}${stats.totalAccountsBalanceBase.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                   : `${stats.displaySymbol}${stats.totalAccountsBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 className="small-kpi"
+                equivalentStr={getEqStr(region === 'all' ? stats.totalAccountsBalanceBase : stats.totalAccountsBalance, stats.displayCurrency)}
                 trend={undefined}
               >
                 <svg style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40px', opacity: 0.15, borderRadius: '0 0 var(--border-radius) var(--border-radius)' }} preserveAspectRatio="none" viewBox="0 0 100 40">

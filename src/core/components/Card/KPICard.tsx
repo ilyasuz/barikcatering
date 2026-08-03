@@ -41,7 +41,7 @@ export function KPICard({ title, value, trend, icon, className = '', equivalentS
       )}
       
       {equivalentStr && !currencyBreakdown && (
-        <div style={{ position: 'absolute', bottom: '12px', right: '16px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+        <div style={{ position: 'absolute', bottom: '12px', right: '16px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, zIndex: 1 }}>
           {equivalentStr}
         </div>
       )}
