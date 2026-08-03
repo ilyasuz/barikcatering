@@ -45,14 +45,16 @@ export async function exportMealToExcel(
     right: { style: 'thin', color: { argb: 'D1D5DB' } }
   };
 
+  const maxColLetter = (template === 'daily' || template === 'excursion') ? 'H' : 'N';
+
   // Header Title Row
-  worksheet.mergeCells('A1:N1');
+  worksheet.mergeCells(`A1:${maxColLetter}1`);
   const titleCell = worksheet.getCell('A1');
   titleCell.value = 'OSMANLI MUTFAĞI UMRE ACENTA GİRİŞ-ÇIKIŞ HESAP TABLOSU';
   titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: '1E3A8A' } };
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-  worksheet.mergeCells('A2:N2');
+  worksheet.mergeCells(`A2:${maxColLetter}2`);
   const titleArCell = worksheet.getCell('A2');
   titleArCell.value = 'المطبخ العثماني - حاسبة وجبات وجداول دخول وخروج مجموعات العمرة';
   titleArCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: '1E3A8A' } };
@@ -215,18 +217,21 @@ export async function exportMealToExcel(
     // TEMPLATE 2: DAILY VARIABLE PAX BREAKDOWN (GÜN GÜN PAX TABLOSU)
     // -------------------------------------------------------------
     
-    // Info Block
-    worksheet.mergeCells('A4:D4');
+    // Info Block (Fits 100% inside A:H)
+    worksheet.mergeCells('A4:C4');
     worksheet.getCell('A4').value = `Şirket / Acenta: ${meal.company_name || '-'}`;
-    worksheet.getCell('A4').font = { bold: true, size: 11 };
+    worksheet.getCell('A4').font = { name: 'Arial', size: 10, bold: true };
+    worksheet.getCell('A4').alignment = { horizontal: 'left', vertical: 'middle' };
 
-    worksheet.mergeCells('E4:H4');
-    worksheet.getCell('E4').value = `Otel Adı: ${meal.hotel_name}`;
-    worksheet.getCell('E4').font = { bold: true, size: 11 };
+    worksheet.mergeCells('D4:F4');
+    worksheet.getCell('D4').value = `Otel Adı: ${meal.hotel_name}`;
+    worksheet.getCell('D4').font = { name: 'Arial', size: 10, bold: true };
+    worksheet.getCell('D4').alignment = { horizontal: 'center', vertical: 'middle' };
 
-    worksheet.mergeCells('I4:L4');
-    worksheet.getCell('I4').value = `Tarih: ${formatDate(meal.entry_date)} - ${formatDate(meal.exit_date)}`;
-    worksheet.getCell('I4').font = { bold: true, size: 11 };
+    worksheet.mergeCells('G4:H4');
+    worksheet.getCell('G4').value = `Tarih: ${formatDate(meal.entry_date)} - ${formatDate(meal.exit_date)}`;
+    worksheet.getCell('G4').font = { name: 'Arial', size: 10, bold: true };
+    worksheet.getCell('G4').alignment = { horizontal: 'right', vertical: 'middle' };
 
     // Daily Table Headers (Row 6 TR, Row 7 AR)
     const headerTr = worksheet.getRow(6);
@@ -305,6 +310,12 @@ export async function exportMealToExcel(
       for (let i = 1; i <= 8; i++) {
         const cell = r.getCell(i);
         cell.border = defaultBorder;
+        if (i === 4) {
+          cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'DC2626' } };
+        }
+        if (i === 5) {
+          cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: '1F2937' } };
+        }
         if (i === 6 || i === 7 || i === 8) {
           cell.numFmt = `#,##0.00 "${meal.currency}"`;
         }
@@ -329,7 +340,6 @@ export async function exportMealToExcel(
       '',
       grandAmountSum
     ];
-    totRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: headerTextColor } };
     totRow.alignment = { horizontal: 'center', vertical: 'middle' };
     totRow.height = 28;
 
@@ -337,8 +347,12 @@ export async function exportMealToExcel(
       const cell = totRow.getCell(i);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBgColor } };
       cell.border = defaultBorder;
-      if (i === 8) cell.numFmt = `#,##0.00 "${meal.currency}"`;
+      cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFF' } };
     }
+    totRow.getCell(4).font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FCA5A5' } };
+    totRow.getCell(5).font = { name: 'Arial', size: 12, bold: true, color: { argb: 'E0E7FF' } };
+    totRow.getCell(8).font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFFFFF' } };
+    totRow.getCell(8).numFmt = `#,##0.00 "${meal.currency}"`;
 
     // Grand Totals Row 2: Price Subtotals Directly Under Morning Pax & Evening Pax!
     nextRow++;
@@ -356,7 +370,6 @@ export async function exportMealToExcel(
       '',
       grandAmountSum
     ];
-    priceTotRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: '1E3A8A' } };
     priceTotRow.alignment = { horizontal: 'center', vertical: 'middle' };
     priceTotRow.height = 28;
 
@@ -364,10 +377,16 @@ export async function exportMealToExcel(
       const cell = priceTotRow.getCell(i);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
       cell.border = defaultBorder;
-      if (i === 4 || i === 5 || i === 8) {
-        cell.numFmt = `#,##0.00 "${meal.currency}"`;
-      }
+      cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: '1E3A8A' } };
     }
+    priceTotRow.getCell(4).font = { name: 'Arial', size: 12, bold: true, color: { argb: 'DC2626' } };
+    priceTotRow.getCell(4).numFmt = `#,##0.00 "${meal.currency}"`;
+
+    priceTotRow.getCell(5).font = { name: 'Arial', size: 12, bold: true, color: { argb: '1E3A8A' } };
+    priceTotRow.getCell(5).numFmt = `#,##0.00 "${meal.currency}"`;
+
+    priceTotRow.getCell(8).font = { name: 'Arial', size: 13, bold: true, color: { argb: '047857' } };
+    priceTotRow.getCell(8).numFmt = `#,##0.00 "${meal.currency}"`;
   } else if (template === 'excursion') {
     // -------------------------------------------------------------
     // TEMPLATE 3: EXCURSION DEDUCTIONS DETAILED (GEZİ DÜŞÜŞ DETAYI)
