@@ -226,7 +226,7 @@ export async function exportMealToExcel(
     // Daily Table Headers (Row 6 TR, Row 7 AR)
     const headerTr = worksheet.getRow(6);
     headerTr.values = [
-      'GÜN NO', 'TARİH', 'GÜN', 'SABAH PAX', 'AKŞAM PAX',
+      'GÜN NO', 'TARİH', 'GÜN', 'SABAH KİŞİ SAYISI', 'AKŞAM KİŞİ SAYISI',
       'SABAH FİYAT', 'AKŞAM FİYAT', 'GÜNLÜK TOPLAM TUTAR'
     ];
     headerTr.font = { name: 'Arial', size: 10, bold: true, color: { argb: headerTextColor } };
